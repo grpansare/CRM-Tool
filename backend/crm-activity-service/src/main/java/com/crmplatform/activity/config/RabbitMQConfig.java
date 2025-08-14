@@ -1,0 +1,36 @@
+package com.crmplatform.activity.config;
+
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class RabbitMQConfig {
+    
+    @Value("${crm.events.exchange:crm.events}")
+    private String eventsExchange;
+    
+    @Value("${crm.events.activity.created.routing-key:activity.created}")
+    private String activityCreatedRoutingKey;
+    
+    @Bean
+    public TopicExchange eventsExchange() {
+        return new TopicExchange(eventsExchange);
+    }
+    
+    @Bean
+    public Jackson2JsonMessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+    
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(messageConverter());
+        return template;
+    }
+}

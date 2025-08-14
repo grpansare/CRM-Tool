@@ -1,0 +1,164 @@
+# Backend .gitignore for Spring Boot Microservices
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle (if used)
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Spring Boot
+spring-boot-*.jar
+*.original
+
+# Application logs
+*.log
+logs/
+spring.log
+application.log
+
+# IDE files
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+.metadata/
+.recommenders/
+
+# Eclipse
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+.factorypath
+
+# IntelliJ IDEA
+out/
+.idea_modules/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# STS (Spring Tool Suite)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+
+# Configuration files with sensitive data
+application-local.properties
+application-dev.properties
+application-prod.properties
+bootstrap-local.yml
+bootstrap-dev.yml
+bootstrap-prod.yml
+
+# Environment specific
+.env
+.env.local
+.env.development
+.env.production
+
+# Test coverage
+target/site/jacoco/
+*.exec
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# JVM crash logs
+hs_err_pid*
+
+# Security
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.yaml.bak
+*.yml.bak
+
+# Service discovery
+eureka-client.properties
+
+# Actuator sensitive endpoints
+management/
+
+# Custom application files
+uploads/
+temp-files/
+cache/
+
+# Microservice specific
+service-registry/
+config-server/
+api-gateway/logs/
+auth-service/logs/
+contacts-service/logs/
+sales-service/logs/
+activity-service/logs/
+email-service/logs/
+
+# RabbitMQ
+rabbitmq-data/
+
+# MySQL
+mysql-data/
+
+# Redis
+redis-data/
