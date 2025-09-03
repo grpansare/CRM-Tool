@@ -9,6 +9,7 @@ import {
   Calendar,
   DollarSign,
 } from "lucide-react";
+import api from "../../services/api";
 
 const SalesManagerDashboard = () => {
   const [teamStats, setTeamStats] = useState({
@@ -20,24 +21,79 @@ const SalesManagerDashboard = () => {
     pipelineValue: 0,
     teamPerformance: [],
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // TODO: Fetch team performance data
-    setTeamStats({
-      teamSize: 8,
-      totalDeals: 45,
-      totalRevenue: 85000,
-      averageDealSize: 1889,
-      winRate: 68,
-      pipelineValue: 125000,
-      teamPerformance: [
-        { name: "John Smith", deals: 12, revenue: 25000, performance: 95 },
-        { name: "Sarah Johnson", deals: 8, revenue: 18000, performance: 87 },
-        { name: "Mike Davis", deals: 15, revenue: 32000, performance: 92 },
-        { name: "Lisa Wilson", deals: 10, revenue: 20000, performance: 78 },
-      ],
-    });
+    fetchTeamStats();
   }, []);
+
+  const fetchTeamStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch team statistics from sales manager API
+      const response = await api.get('/sales-manager/team-stats');
+      
+      if (response.data.success) {
+        setTeamStats(response.data.data);
+      } else {
+        setError('Failed to fetch team statistics');
+      }
+    } catch (err) {
+      console.error('Error fetching team stats:', err);
+      setError('Error loading team data');
+      
+      // Fallback to demo data for development
+      setTeamStats({
+        teamSize: 8,
+        totalDeals: 45,
+        totalRevenue: 85000,
+        averageDealSize: 1889,
+        winRate: 68,
+        pipelineValue: 125000,
+        teamPerformance: [
+          { name: "John Smith", deals: 12, revenue: 25000, performance: 95 },
+          { name: "Sarah Johnson", deals: 8, revenue: 18000, performance: 87 },
+          { name: "Mike Davis", deals: 15, revenue: 32000, performance: 92 },
+          { name: "Lisa Wilson", deals: 10, revenue: 20000, performance: 78 },
+        ],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Dashboard</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchTeamStats}
+            className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -27,4 +27,22 @@ public interface PipelineStageRepository extends JpaRepository<PipelineStage, Lo
     @Query("SELECT MAX(ps.stageOrder) FROM PipelineStage ps WHERE ps.tenantId = :tenantId AND ps.pipelineId = :pipelineId")
     Integer findMaxStageOrderByTenantIdAndPipelineId(@Param("tenantId") Long tenantId, 
                                                     @Param("pipelineId") Long pipelineId);
+    
+    // Method needed by SalesPipelineService
+    @Query("SELECT ps FROM PipelineStage ps WHERE ps.pipelineId = :pipelineId AND ps.tenantId = :tenantId ORDER BY ps.stageOrder")
+    List<PipelineStage> findByPipelineIdAndTenantIdOrderByStageOrder(@Param("pipelineId") Long pipelineId, 
+                                                                     @Param("tenantId") Long tenantId);
+    
+    // Method needed by SalesPipelineService
+    @Query("SELECT ps FROM PipelineStage ps WHERE ps.stageId = :stageId AND ps.tenantId = :tenantId")
+    Optional<PipelineStage> findByStageIdAndTenantId(@Param("stageId") Long stageId, 
+                                                    @Param("tenantId") Long tenantId);
+    
+    // Method needed by SalesManagerService
+    @Query("SELECT ps FROM PipelineStage ps WHERE ps.tenantId = :tenantId")
+    List<PipelineStage> findByTenantId(@Param("tenantId") Long tenantId);
+    
+    // Method needed by DealService for getting all stages ordered
+    @Query("SELECT ps FROM PipelineStage ps WHERE ps.tenantId = :tenantId ORDER BY ps.stageOrder")
+    List<PipelineStage> findByTenantIdOrderByStageOrder(@Param("tenantId") Long tenantId);
 } 

@@ -60,4 +60,20 @@ public class ContactController {
         ApiResponse<List<ContactResponse>> response = contactService.searchContacts(searchTerm, page, size);
         return ResponseEntity.ok(response);
     }
-} 
+    
+    @PutMapping("/{contactId}")
+    public ResponseEntity<ApiResponse<ContactResponse>> updateContact(
+            @PathVariable Long contactId,
+            @Valid @RequestBody CreateContactRequest request) {
+        
+        log.info("Updating contact: {}", contactId);
+        
+        ApiResponse<ContactResponse> response = contactService.updateContact(contactId, request);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+}

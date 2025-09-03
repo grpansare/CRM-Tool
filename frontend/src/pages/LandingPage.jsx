@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Users, BarChart3, Shield, Zap, Check, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,11 +16,16 @@ const LandingPage = () => {
   }, []);
 
   const handleGetStarted = () => {
-    console.log('Navigate to register');
+    navigate('/register');
   };
 
   const handleSignIn = () => {
-    console.log('Navigate to login');
+    navigate('/login');
+  };
+
+  const handleWatchDemo = () => {
+    // For now, navigate to register - can be changed to demo page later
+    navigate('/register');
   };
 
   return (
@@ -42,16 +48,16 @@ const LandingPage = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button 
-               
+                onClick={handleSignIn}
                 className="px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200"
               >
-               <Link to="/login">Sign In</Link>
+                Sign In
               </button>
               <button 
                 onClick={handleGetStarted}
                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transform transition-all duration-200 font-medium"
               >
-                <Link to="/register">Get Started</Link>
+                Get Started
               </button>
             </div>
           </div>
@@ -85,7 +91,7 @@ const LandingPage = () => {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
               </button>
               <button 
-                onClick={handleSignIn}
+                onClick={handleWatchDemo}
                 className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-500 hover:text-blue-600 font-semibold text-lg transition-all duration-200"
               >
                 Watch Demo

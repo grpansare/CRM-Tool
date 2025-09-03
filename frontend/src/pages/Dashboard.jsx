@@ -7,33 +7,54 @@ import {
   Building,
   Settings,
   LogOut,
+  Bell,
+  Search,
+  TrendingUp,
+  DollarSign,
+  UserPlus,
+  Calendar,
+  GitBranch,
   User,
   Plus,
-  Search,
-  Bell,
 } from "lucide-react";
 import Contacts from "../components/Contacts.jsx";
 import Deals from "../components/Deals.jsx";
 import Accounts from "../components/Accounts.jsx";
 import UsersManagement from "../components/UsersManagement.jsx";
+import Pipeline from "../components/Pipeline.jsx";
 import Settings1 from "../components/Settings.jsx";
 import TenantAdminDashboard from "../components/dashboards/TenantAdminDashboard.jsx";
 import SalesManagerDashboard from "../components/dashboards/SalesManagerDashboard.jsx";
 import SalesRepDashboard from "../components/dashboards/SalesRepDashboard.jsx";
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
   };
-  console.log(user.email);
-  
-  if (!user) {
+
+  // Show loading spinner while authentication is being validated
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only redirect after loading is complete and user is still null
+  if (!loading && !user) {
+    alert("wtf")
     navigate("/login");
     return null;
   }
+
+  console.log(user?.email);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,8 +63,11 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-600">
-                CRM Platform
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg mr-3 flex items-center justify-center">
+                <div className="w-3 h-3 bg-white rounded-sm"></div>
+              </div>
+              <h1 className="text-2xl font-bold text-blue-600">
+                CRMFlow
               </h1>
             </div>
 
@@ -102,6 +126,14 @@ const Dashboard = () => {
               </Link>
 
               <Link
+                to="/dashboard/pipeline"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+              >
+                <GitBranch className="h-5 w-5 mr-3" />
+                Pipeline
+              </Link>
+
+              <Link
                 to="/dashboard/accounts"
                 className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
               >
@@ -147,6 +179,7 @@ const Dashboard = () => {
             <Route path="/" element={<RoleBasedDashboard />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/deals" element={<Deals />} />
+            <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/users" element={<UsersManagement />} />
             <Route path="/settings" element={<Settings1 />} />

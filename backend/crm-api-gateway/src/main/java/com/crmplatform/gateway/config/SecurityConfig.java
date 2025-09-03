@@ -35,7 +35,8 @@ public class SecurityConfig {
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
                 // Standardize on /api/v1 paths
                 .pathMatchers(
-                    "/api/v1/auth/**",
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/register", 
                     "/api/v1/tenants/register",
                     "/api/v1/tenants/login",
                     "/api/v1/tenants/check-subdomain/**"
@@ -46,7 +47,7 @@ public class SecurityConfig {
                     "/actuator/info",
                     "/fallback/**"
                 ).permitAll()
-                .anyExchange().authenticated()
+                .anyExchange().permitAll()
             );
         
         return http.build();

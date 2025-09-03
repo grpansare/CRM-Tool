@@ -103,6 +103,7 @@ public class AuthService {
                     .build();
             
             log.info("User {} logged in successfully", user.getUserId());
+            
             return ApiResponse.success(loginResponse, "Login successful");
             
         } catch (Exception e) {

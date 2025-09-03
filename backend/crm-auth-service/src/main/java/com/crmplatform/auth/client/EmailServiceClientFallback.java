@@ -19,4 +19,14 @@ public class EmailServiceClientFallback implements EmailServiceClient {
                 "message", "Email service temporarily unavailable"
         ));
     }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> sendInvitationEmail(String tenantId, String toEmail, String inviteUrl, String role) {
+        log.warn("Email service is unavailable. Fallback triggered for invitation email to: {} for tenant: {} with role: {}", toEmail, tenantId, role);
+        
+        return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", "Email service temporarily unavailable"
+        ));
+    }
 }

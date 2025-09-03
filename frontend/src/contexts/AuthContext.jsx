@@ -39,10 +39,12 @@ export const AuthProvider = ({ children }) => {
         });
         setUser(userResponse.data.data);
       } else {
+       
         logout();
       }
     } catch (error) {
       console.error("Token validation failed:", error);
+      alert("logging out")
       logout();
     } finally {
       setLoading(false);
@@ -64,7 +66,7 @@ export const AuthProvider = ({ children }) => {
         console.log(user);
 
         localStorage.setItem("token", accessToken);
-        alert(userData.email);
+        // alert(userData.email);
         toast.success("Login successful!");
         navigate("/dashboard");
         return { success: true };

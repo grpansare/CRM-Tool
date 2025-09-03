@@ -59,7 +59,7 @@ public class GatewayConfig {
                 
                 // Sales Service Routes
                 .route("sales-service", r -> r
-                        .path("/api/v1/deals/**", "/api/v1/pipelines/**")
+                        .path("/api/v1/deals/**", "/api/v1/pipelines/**", "/api/v1/sales-manager/**")
                         .filters(f -> f
                                 .rewritePath("/api/v1/(?<segment>.*)", "/api/v1/${segment}")
                                 .circuitBreaker(config -> config

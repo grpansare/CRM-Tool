@@ -10,9 +10,8 @@ public class FeignAuthConfig {
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
-            // TODO: replace with actual token retrieval logic
-            String token = "your-service-token-or-jwt";
-            requestTemplate.header("Authorization", "Bearer " + token);
+            // No authentication needed for inter-service calls to public endpoints
+            // The email service allows /api/email/invitation and /api/email/welcome as public endpoints
         };
     }
 }

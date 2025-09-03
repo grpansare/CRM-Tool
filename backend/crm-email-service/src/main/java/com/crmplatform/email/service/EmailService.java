@@ -1,6 +1,7 @@
 package com.crmplatform.email.service;
 
 import com.crmplatform.email.dto.EmailRequest;
+
 import com.crmplatform.email.entity.EmailLog;
 import com.crmplatform.email.entity.EmailTemplate;
 import com.crmplatform.email.repository.EmailLogRepository;

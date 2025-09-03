@@ -34,6 +34,9 @@ public class Invitation {
 
     @Column(name = "invited_by_user_id", nullable = false)
     private Long invitedByUserId;
+    
+    @Column(name = "manager_id")
+    private Long managerId;
 
     @Column(name = "token", nullable = false, length = 128)
     private String token;

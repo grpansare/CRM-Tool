@@ -43,4 +43,18 @@ public interface DealRepository extends JpaRepository<Deal, Long> {
                            @Param("searchTerm") String searchTerm);
     
     Optional<Deal> findByTenantIdAndDealId(Long tenantId, Long dealId);
-} 
+    
+    // Method needed by SalesPipelineService
+    @Query("SELECT COUNT(d) FROM Deal d WHERE d.stageId = :stageId AND d.tenantId = :tenantId")
+    long countByStageIdAndTenantId(@Param("stageId") Long stageId, 
+                                  @Param("tenantId") Long tenantId);
+    
+    // Method needed by SalesPipelineService  
+    @Query("SELECT d FROM Deal d WHERE d.stageId = :stageId AND d.tenantId = :tenantId")
+    List<Deal> findByStageIdAndTenantId(@Param("stageId") Long stageId, 
+                                       @Param("tenantId") Long tenantId);
+    
+    // Method needed by SalesManagerService
+    @Query("SELECT d FROM Deal d WHERE d.tenantId = :tenantId")
+    List<Deal> findByTenantId(@Param("tenantId") Long tenantId);
+}

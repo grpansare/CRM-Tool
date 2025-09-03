@@ -2,9 +2,13 @@ package com.crmplatform.contacts.controller;
 
 import com.crmplatform.common.dto.ApiResponse;
 import com.crmplatform.contacts.dto.AccountResponse;
+import com.crmplatform.contacts.dto.ContactResponse;
+import com.crmplatform.contacts.dto.CreateAccountRequest;
 import com.crmplatform.contacts.service.AccountService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +35,21 @@ public class AccountController {
         }
     }
     
+    @PostMapping
+    public ResponseEntity<ApiResponse<AccountResponse>> createAccount(
+            @Valid @RequestBody CreateAccountRequest request) {
+        
+        log.info("Creating account: {}", request.getAccountName());
+        
+        ApiResponse<AccountResponse> response = accountService.createAccount(request);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+    }
+    
     @GetMapping
     public ResponseEntity<ApiResponse<List<AccountResponse>>> searchAccounts(
             @RequestParam(required = false) String searchTerm,
@@ -40,6 +59,30 @@ public class AccountController {
         log.info("Searching accounts with term: {}", searchTerm);
         
         ApiResponse<List<AccountResponse>> response = accountService.searchAccounts(searchTerm, page, size);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PutMapping("/{accountId}")
+    public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
+            @PathVariable Long accountId,
+            @Valid @RequestBody CreateAccountRequest request) {
+        
+        log.info("Updating account: {} with data: {}", accountId, request.getAccountName());
+        
+        ApiResponse<AccountResponse> response = accountService.updateAccount(accountId, request);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @GetMapping("/{accountId}/contacts")
+    public ResponseEntity<ApiResponse<List<ContactResponse>>> getAccountContacts(@PathVariable Long accountId) {
+        log.info("Getting contacts for account: {}", accountId);
+        
+        ApiResponse<List<ContactResponse>> response = accountService.getAccountContacts(accountId);
         return ResponseEntity.ok(response);
     }
 } 

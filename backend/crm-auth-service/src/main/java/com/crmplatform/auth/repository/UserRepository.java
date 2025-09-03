@@ -21,6 +21,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.tenantId = :tenantId AND u.isActive = true")
     List<User> findByTenantIdAndActive(@Param("tenantId") Long tenantId);
     
+    @Query("SELECT u FROM User u WHERE u.tenantId = :tenantId")
+    List<User> findByTenantId(@Param("tenantId") Long tenantId);
+    
     @Query("SELECT u FROM User u WHERE u.tenantId = :tenantId AND u.managerId = :managerId AND u.isActive = true")
     List<User> findByTenantIdAndManagerIdAndActive(@Param("tenantId") Long tenantId, 
                                                   @Param("managerId") Long managerId);

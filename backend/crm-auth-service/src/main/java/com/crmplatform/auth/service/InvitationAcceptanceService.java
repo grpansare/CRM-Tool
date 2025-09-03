@@ -50,6 +50,7 @@ public class InvitationAcceptanceService {
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
                     .role(invitation.getRole().name())
+                    .managerId(invitation.getManagerId())
                     .isActive(true)
                     .build();
 

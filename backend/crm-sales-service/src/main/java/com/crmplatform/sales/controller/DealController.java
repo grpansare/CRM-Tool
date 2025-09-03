@@ -26,15 +26,47 @@ public class DealController {
     public ResponseEntity<ApiResponse<DealResponse>> createDeal(
             @Valid @RequestBody CreateDealRequest request) {
         
+        log.info("=== DEAL CREATION DEBUG ===");
         log.info("Creating deal: {}", request.getDealName());
+        log.info("User Context - UserId: {}, TenantId: {}, Username: {}, Role: {}", 
+                 com.crmplatform.common.security.UserContext.getCurrentUserId(),
+                 com.crmplatform.common.security.UserContext.getCurrentTenantId(),
+                 com.crmplatform.common.security.UserContext.getCurrentUsername(),
+                 com.crmplatform.common.security.UserContext.getCurrentUserRole());
+        log.info("Request payload: {}", request);
         
-        ApiResponse<DealResponse> response = dealService.createDeal(request);
-        
-        if (response.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
+        try {
+            ApiResponse<DealResponse> response = dealService.createDeal(request);
+            log.info("Deal creation response: success={}, message={}", response.isSuccess(), response.getMessage());
+            
+            if (response.isSuccess()) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            log.error("Exception during deal creation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<DealResponse>builder()
+                            .success(false)
+                            .message("Internal server error: " + e.getMessage())
+                            .build());
         }
+    }
+    
+    @GetMapping("/stages")
+    public ResponseEntity<ApiResponse<List<DealResponse.PipelineStageResponse>>> getAvailableStages() {
+        log.info("=== DEAL CONTROLLER DEBUG === Getting available stages");
+        log.info("=== USER CONTEXT === UserId: {}, TenantId: {}, Username: {}, Role: {}", 
+                 com.crmplatform.common.security.UserContext.getCurrentUserId(),
+                 com.crmplatform.common.security.UserContext.getCurrentTenantId(),
+                 com.crmplatform.common.security.UserContext.getCurrentUsername(),
+                 com.crmplatform.common.security.UserContext.getCurrentUserRole());
+        
+        ApiResponse<List<DealResponse.PipelineStageResponse>> response = dealService.getAvailableStages();
+        log.info("=== DEAL CONTROLLER DEBUG === Stages response: success={}, data count={}", 
+                 response.isSuccess(), response.getData() != null ? response.getData().size() : 0);
+        return ResponseEntity.ok(response);
     }
     
     @PutMapping("/{dealId}/stage")
@@ -99,4 +131,34 @@ public class DealController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-} 
+    
+    @DeleteMapping("/{dealId}")
+    public ResponseEntity<ApiResponse<Void>> deleteDeal(@PathVariable Long dealId) {
+        log.info("Deleting deal: {}", dealId);
+        
+        ApiResponse<Void> response = dealService.deleteDeal(dealId);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PutMapping("/{dealId}")
+    public ResponseEntity<ApiResponse<DealResponse>> updateDeal(
+            @PathVariable Long dealId,
+            @Valid @RequestBody CreateDealRequest request) {
+        
+        log.info("Updating deal: {}", dealId);
+        
+        ApiResponse<DealResponse> response = dealService.updateDeal(dealId, request);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+}

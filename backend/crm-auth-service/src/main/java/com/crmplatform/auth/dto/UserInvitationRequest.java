@@ -22,5 +22,12 @@ public class UserInvitationRequest {
     // Expected values: SUPER_ADMIN, TENANT_ADMIN, SALES_MANAGER, SALES_REP, SUPPORT_AGENT, READ_ONLY
     @NotBlank
     private String role;
+    
+    // Required for SALES_REP role - specifies which manager will supervise this rep
+    private Long managerId;
+    
+    // Optional fields for better organization
+    private String department;
+    private String territory;
 }
 

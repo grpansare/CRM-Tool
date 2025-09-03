@@ -8,7 +8,9 @@ import com.crmplatform.contacts.entity.Account;
 import com.crmplatform.contacts.entity.AccountContact;
 import com.crmplatform.contacts.entity.Contact;
 import com.crmplatform.contacts.repository.AccountRepository;
+import com.crmplatform.contacts.repository.AccountContactRepository;
 import com.crmplatform.contacts.repository.ContactRepository;
+import com.crmplatform.contacts.entity.CustomFieldData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,7 +32,8 @@ public class ContactService {
     
     private final ContactRepository contactRepository;
     private final AccountRepository accountRepository;
-    private final EventPublisher eventPublisher;
+    private final AccountContactRepository accountContactRepository;
+    private final CustomFieldService customFieldService;
     
     private static final Pattern EMAIL_DOMAIN_PATTERN = Pattern.compile("@(.+)$");
     
@@ -67,22 +70,26 @@ public class ContactService {
         
         contact = contactRepository.save(contact);
         
-        // Create account-contact relationship
-        AccountContact accountContact = AccountContact.builder()
-                .id(AccountContact.AccountContactId.builder()
-                        .accountId(account.getAccountId())
-                        .contactId(contact.getContactId())
-                        .tenantId(tenantId)
-                        .build())
-                .build();
+        // Save custom fields
+        if (request.getCustomFields() != null && !request.getCustomFields().isEmpty()) {
+            customFieldService.saveCustomFields(tenantId, contact.getContactId(), 
+                    CustomFieldData.EntityType.CONTACT, request.getCustomFields());
+        }
         
-        // TODO: Save account contact relationship when repository is created
+        // Save account contact relationship
+        if (account != null) {
+            AccountContact accountContact = AccountContact.builder()
+                    .id(AccountContact.AccountContactId.builder()
+                            .accountId(account.getAccountId())
+                            .contactId(contact.getContactId())
+                            .tenantId(tenantId)
+                            .build())
+                    .build();
+            accountContactRepository.save(accountContact);
+        }
         
-        // Publish events (DISABLED - RabbitMQ not required)
-        // eventPublisher.publishContactCreated(contact);
-        // if (account.getCreatedAt().equals(contact.getCreatedAt())) {
-        //     eventPublisher.publishAccountCreated(account);
-        // }
+        // Events disabled for now
+        log.info("Contact created successfully: {}", contact.getContactId());
         
         // Build response
         ContactResponse response = buildContactResponse(contact, account, request.getCustomFields());
@@ -100,10 +107,14 @@ public class ContactService {
         
         Contact contact = contactOpt.get();
         
-        // TODO: Get associated account details
-        Account account = null; // This would need to be fetched from account_contacts relationship
+        // Get custom fields
+        Map<String, String> customFields = customFieldService.getCustomFields(
+                tenantId, contact.getContactId(), CustomFieldData.EntityType.CONTACT);
         
-        ContactResponse response = buildContactResponse(contact, account, null);
+        // Get associated account details
+        Account account = getAccountForContact(contact.getContactId(), tenantId);
+        
+        ContactResponse response = buildContactResponse(contact, account, customFields);
         return ApiResponse.success(response);
     }
     
@@ -120,10 +131,101 @@ public class ContactService {
         }
         
         List<ContactResponse> responses = contacts.stream()
-                .map(contact -> buildContactResponse(contact, null, null))
-                .toList();
+            .map(contact -> {
+                // Get account for this contact
+                Account account = getAccountForContact(contact.getContactId(), tenantId);
+                // Get custom fields
+                Map<String, String> customFields = customFieldService.getCustomFields(
+                        tenantId, contact.getContactId(), CustomFieldData.EntityType.CONTACT);
+                return buildContactResponse(contact, account, customFields);
+            })
+            .toList();
         
         return ApiResponse.success(responses);
+    }
+    
+    @Transactional
+    public ApiResponse<ContactResponse> updateContact(Long contactId, CreateContactRequest request) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        Long ownerUserId = UserContext.getCurrentUserId();
+        
+        // Find existing contact
+        Optional<Contact> contactOpt = contactRepository.findByTenantIdAndContactId(tenantId, contactId);
+        if (contactOpt.isEmpty()) {
+            return ApiResponse.error("Contact not found", "CONTACT_NOT_FOUND");
+        }
+        
+        Contact contact = contactOpt.get();
+        
+        // Check for email conflicts (excluding current contact)
+        if (request.getPrimaryEmail() != null && !request.getPrimaryEmail().equals(contact.getPrimaryEmail())) {
+            Optional<Contact> existingContact = contactRepository
+                    .findByTenantIdAndPrimaryEmail(tenantId, request.getPrimaryEmail());
+            
+            if (existingContact.isPresent()) {
+                log.warn("Contact with email {} already exists in tenant {}", 
+                        request.getPrimaryEmail(), tenantId);
+                return ApiResponse.error("Contact with this email already exists", "CONTACT_DUPLICATE");
+            }
+        }
+        
+        // Update contact fields
+        contact.setFirstName(request.getFirstName());
+        contact.setLastName(request.getLastName());
+        contact.setPrimaryEmail(request.getPrimaryEmail());
+        contact.setPhoneNumber(request.getPhoneNumber());
+        contact.setJobTitle(request.getJobTitle());
+        
+        contact = contactRepository.save(contact);
+        
+        // Update custom fields
+        if (request.getCustomFields() != null) {
+            customFieldService.saveCustomFields(tenantId, contact.getContactId(), 
+                    CustomFieldData.EntityType.CONTACT, request.getCustomFields());
+        }
+        
+        // Handle account association update
+        Account account = null;
+        if (request.getAccountName() != null && !request.getAccountName().trim().isEmpty()) {
+            account = findOrCreateAccount(request.getAccountName(), tenantId, ownerUserId);
+            
+            // Remove existing account association
+            accountContactRepository.deleteByContactIdAndTenantId(contact.getContactId(), tenantId);
+            
+            // Create new account association
+            if (account != null) {
+                AccountContact accountContact = AccountContact.builder()
+                        .id(AccountContact.AccountContactId.builder()
+                                .accountId(account.getAccountId())
+                                .contactId(contact.getContactId())
+                                .tenantId(tenantId)
+                                .build())
+                        .build();
+                accountContactRepository.save(accountContact);
+            }
+        }
+        
+        // Get updated custom fields for response
+        Map<String, String> customFields = customFieldService.getCustomFields(
+                tenantId, contact.getContactId(), CustomFieldData.EntityType.CONTACT);
+        
+        // Build response
+        ContactResponse response = buildContactResponse(contact, account, customFields);
+        
+        log.info("Contact updated successfully: {}", contact.getContactId());
+        return ApiResponse.success(response, "Contact updated successfully");
+    }
+    
+    private Account getAccountForContact(Long contactId, Long tenantId) {
+        Optional<AccountContact> accountContactOpt = accountContactRepository
+                .findByContactIdAndTenantId(contactId, tenantId);
+        
+        if (accountContactOpt.isPresent()) {
+            Long accountId = accountContactOpt.get().getId().getAccountId();
+            return accountRepository.findByTenantIdAndAccountId(tenantId, accountId).orElse(null);
+        }
+        
+        return null;
     }
     
     private Account findOrCreateAccount(String accountName, Long tenantId, Long ownerUserId) {

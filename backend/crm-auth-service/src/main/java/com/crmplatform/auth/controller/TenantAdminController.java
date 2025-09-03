@@ -21,7 +21,6 @@ import java.util.Map;
 @RequestMapping("/api/v1/tenant-admin")
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("hasRole('TENANT_ADMIN')")
 public class TenantAdminController {
     
     private final TenantAdminService tenantAdminService;
@@ -32,6 +31,15 @@ public class TenantAdminController {
     @GetMapping("/dashboard/stats")
     public ResponseEntity<ApiResponse<TenantStatsResponse>> getDashboardStats() {
         log.info("Getting dashboard statistics for tenant admin");
+        
+        // Manual role checking using UserContext
+        String currentRole = com.crmplatform.common.security.UserContext.getCurrentUserRole();
+        log.info("=== MANUAL ROLE CHECK === Current role from UserContext: {}", currentRole);
+        
+        if (!"TENANT_ADMIN".equals(currentRole)) {
+            log.warn("Access denied - user role '{}' is not TENANT_ADMIN", currentRole);
+            return ResponseEntity.status(403).body(ApiResponse.error("Access denied", "INSUFFICIENT_PRIVILEGES"));
+        }
         
         ApiResponse<TenantStatsResponse> response = tenantAdminService.getDashboardStats();
         return ResponseEntity.ok(response);
@@ -44,6 +52,15 @@ public class TenantAdminController {
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRecentActivity(
             @RequestParam(defaultValue = "10") int limit) {
         log.info("Getting recent activity for tenant admin, limit: {}", limit);
+        
+        // Manual role checking using UserContext
+        String currentRole = com.crmplatform.common.security.UserContext.getCurrentUserRole();
+        log.info("=== MANUAL ROLE CHECK === Current role from UserContext: {}", currentRole);
+        
+        if (!"TENANT_ADMIN".equals(currentRole)) {
+            log.warn("Access denied - user role '{}' is not TENANT_ADMIN", currentRole);
+            return ResponseEntity.status(403).body(ApiResponse.error("Access denied", "INSUFFICIENT_PRIVILEGES"));
+        }
         
         ApiResponse<List<Map<String, Object>>> response = tenantAdminService.getRecentActivity(limit);
         return ResponseEntity.ok(response);
@@ -189,6 +206,17 @@ public class TenantAdminController {
         } else {
             return ResponseEntity.badRequest().body(response);
         }
+    }
+    
+    /**
+     * Get available managers for assignment
+     */
+    @GetMapping("/managers")
+    public ResponseEntity<ApiResponse<List<User>>> getAvailableManagers() {
+        log.info("Getting available managers for tenant admin");
+        
+        ApiResponse<List<User>> response = tenantAdminService.getAvailableManagers();
+        return ResponseEntity.ok(response);
     }
     
     /**

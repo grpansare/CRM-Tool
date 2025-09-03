@@ -50,12 +50,13 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
-
-        <!-- RabbitMQ for Event Publishing - DISABLED FOR NOW -->
-        <!-- <dependency>
+        
+        <!-- RabbitMQ for Event Publishing -->
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
-        </dependency> -->
+        </dependency>
+
 
         <!-- Lombok -->
         <dependency>
@@ -73,6 +74,7 @@
         <dependency>
             <groupId>de.flapdoodle.embed</groupId>
             <artifactId>de.flapdoodle.embed.mongo</artifactId>
+            <version>4.9.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -83,6 +85,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>com.crmplatform.activity.ActivityServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

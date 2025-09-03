@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -22,6 +23,7 @@ public class AccountResponse {
     private LocalDateTime createdAt;
     
     private List<ContactSummary> contacts;
+    private Map<String, String> customFields;
     
     @Data
     @Builder

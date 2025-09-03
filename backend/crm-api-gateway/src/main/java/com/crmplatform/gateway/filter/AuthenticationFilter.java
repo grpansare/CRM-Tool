@@ -28,7 +28,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/api/v1/auth/login",
             "/api/v1/auth/register",
-            "/api/v1/auth/validate",
             "/api/v1/tenants/register",
             "/api/v1/tenants/check-subdomain",
             "/health",
@@ -40,10 +39,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
+        
+        log.info("=== API GATEWAY DEBUG === Processing request: {} {}", request.getMethod(), path);
 
         // Skip authentication for public endpoints
         if (isPublicEndpoint(path)) {
-            log.debug("Skipping authentication for public endpoint: {}", path);
+            log.info("=== API GATEWAY DEBUG === Skipping authentication for public endpoint: {}", path);
             return chain.filter(exchange);
         }
 
@@ -66,6 +67,9 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             Long tenantId = jwtTokenProvider.getTenantIdFromToken(token);
             String username = jwtTokenProvider.getUsernameFromToken(token);
             String role = jwtTokenProvider.getRoleFromToken(token);
+            
+            log.info("=== JWT CLAIMS DEBUG === UserId: {}, TenantId: {}, Username: {}, Role: {}", 
+                    userId, tenantId, username, role);
 
             // Set user context for downstream services
             UserContext.setCurrentUserId(userId);
@@ -75,14 +79,15 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
             // Add user information to request headers for downstream services
             ServerHttpRequest modifiedRequest = request.mutate()
-                    .header("X-User-ID", String.valueOf(userId))
-                    .header("X-Tenant-ID", String.valueOf(tenantId))
+                    .header("X-User-Id", String.valueOf(userId))
+                    .header("X-Tenant-Id", String.valueOf(tenantId))
                     .header("X-Username", username)
                     .header("X-User-Role", role)
                     .build();
 
-            log.debug("Authenticated user: {} (ID: {}, Tenant: {}, Role: {}) for path: {}", 
-                    username, userId, tenantId, role, path);
+            log.info("=== API GATEWAY DEBUG === Adding headers to request - UserId: {}, TenantId: {}, Username: {}, Role: {}", 
+                    userId, tenantId, username, role);
+            log.info("=== API GATEWAY DEBUG === Forwarding request to: {}", path);
 
             return chain.filter(exchange.mutate().request(modifiedRequest).build())
                     .doFinally(signalType -> {

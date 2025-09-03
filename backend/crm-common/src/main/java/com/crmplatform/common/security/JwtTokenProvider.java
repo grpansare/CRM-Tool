@@ -14,12 +14,8 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    // This is Base64 encoded and safe for HS512
-    private final String secretKey = "u5jZf4iQswG1vQ6E8dB+LqAfS7P3mK4nV1rjv6yO9wXf+zC5iQb7mLqX1tYwA9oU2cD7hYk3qT5lE8sP4zV7nB6mQ2rW5tL8v"
-            .getBytes() // If not encoded, we’ll encode manually below
-            .length > 0 ? java.util.Base64.getEncoder().encodeToString(
-                "u5jZf4iQswG1vQ6E8dB+LqAfS7P3mK4nV1rjv6yO9wXf+zC5iQb7mLqX1tYwA9oU2cD7hYk3qT5lE8sP4zV7nB6mQ2rW5tL8v".getBytes()
-            ) : "";
+    // Base64 encoded secret key for HS512 (must be at least 512 bits/64 bytes)
+    private final String secretKey = "dTVqWmY0aVFzd0cxdlE2RThkQitMcUFmUzdQM21LNG5WMXJqdjZ5Tzl3WGYrekM1aVFiN21McVgxdFl3QTlvVTJjRDdoWWszcVQ1bEU4c1A0elY3bkI2bVEyclc1dEw4dg==";
 
     private final long jwtExpirationMs = 86400000; // 1 day
 

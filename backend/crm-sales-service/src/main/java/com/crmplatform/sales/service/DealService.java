@@ -224,6 +224,131 @@ public class DealService {
         return ApiResponse.success(responses);
     }
     
+    @Transactional
+    public ApiResponse<Void> deleteDeal(Long dealId) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        Long ownerUserId = UserContext.getCurrentUserId();
+        
+        // Get the deal
+        Optional<Deal> dealOpt = dealRepository.findByTenantIdAndDealId(tenantId, dealId);
+        if (dealOpt.isEmpty()) {
+            return ApiResponse.error("Deal not found", "DEAL_NOT_FOUND");
+        }
+        
+        Deal deal = dealOpt.get();
+        
+        // Validate user permissions (deal owner or manager)
+        if (!deal.getOwnerUserId().equals(ownerUserId)) {
+            // TODO: Add manager role check
+            return ApiResponse.error("Insufficient permissions", "INSUFFICIENT_PERMISSIONS");
+        }
+        
+        // Delete stage history first (foreign key constraint)
+        dealStageHistoryRepository.deleteByTenantIdAndDealId(tenantId, dealId);
+        
+        // Delete the deal
+        dealRepository.delete(deal);
+        
+        return ApiResponse.success(null, "Deal deleted successfully");
+    }
+    
+    @Transactional
+    public ApiResponse<DealResponse> updateDeal(Long dealId, CreateDealRequest request) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        Long ownerUserId = UserContext.getCurrentUserId();
+        
+        // Get the deal
+        Optional<Deal> dealOpt = dealRepository.findByTenantIdAndDealId(tenantId, dealId);
+        if (dealOpt.isEmpty()) {
+            return ApiResponse.error("Deal not found", "DEAL_NOT_FOUND");
+        }
+        
+        Deal deal = dealOpt.get();
+        
+        // Validate user permissions (deal owner or manager)
+        if (!deal.getOwnerUserId().equals(ownerUserId)) {
+            // TODO: Add manager role check
+            return ApiResponse.error("Insufficient permissions", "INSUFFICIENT_PERMISSIONS");
+        }
+        
+        // Validate stage exists
+        Optional<PipelineStage> stage = pipelineStageRepository
+                .findByTenantIdAndStageId(tenantId, request.getStageId());
+        
+        if (stage.isEmpty()) {
+            return ApiResponse.error("Invalid stage ID", "INVALID_STAGE");
+        }
+        
+        // Validate contact exists in contacts service
+        if (!contactIntegrationService.validateContact(request.getContactId())) {
+            return ApiResponse.error("Contact not found", "CONTACT_NOT_FOUND");
+        }
+        
+        // Validate account exists in contacts service
+        if (!contactIntegrationService.validateAccount(request.getAccountId())) {
+            return ApiResponse.error("Account not found", "ACCOUNT_NOT_FOUND");
+        }
+        
+        // Update deal fields
+        deal.setDealName(request.getDealName());
+        deal.setAmount(request.getAmount());
+        deal.setExpectedCloseDate(request.getExpectedCloseDate());
+        deal.setContactId(request.getContactId());
+        deal.setAccountId(request.getAccountId());
+        
+        // Handle stage change if needed
+        if (!deal.getStageId().equals(request.getStageId())) {
+            Long oldStageId = deal.getStageId();
+            
+            // Calculate time in previous stage
+            Optional<DealStageHistory> lastHistory = dealStageHistoryRepository
+                    .findLatestByTenantIdAndDealId(tenantId, dealId);
+            
+            int timeInPreviousStageDays = 0;
+            if (lastHistory.isPresent()) {
+                LocalDateTime lastChange = lastHistory.get().getChangedAt();
+                timeInPreviousStageDays = (int) ChronoUnit.DAYS.between(lastChange, LocalDateTime.now());
+            }
+            
+            // Create stage history entry
+            DealStageHistory stageHistory = DealStageHistory.builder()
+                    .tenantId(tenantId)
+                    .dealId(dealId)
+                    .fromStageId(oldStageId)
+                    .toStageId(request.getStageId())
+                    .timeInPreviousStageDays(timeInPreviousStageDays)
+                    .build();
+            
+            dealStageHistoryRepository.save(stageHistory);
+            deal.setStageId(request.getStageId());
+        }
+        
+        deal = dealRepository.save(deal);
+        
+        // Build response with contact and account details
+        DealResponse response = buildDealResponseWithDetails(deal, stage.get());
+        
+        return ApiResponse.success(response, "Deal updated successfully");
+    }
+    
+    public ApiResponse<List<DealResponse.PipelineStageResponse>> getAvailableStages() {
+        Long tenantId = UserContext.getCurrentTenantId();
+        
+        List<PipelineStage> stages = pipelineStageRepository.findByTenantIdOrderByStageOrder(tenantId);
+        
+        List<DealResponse.PipelineStageResponse> stageResponses = stages.stream()
+                .map(stage -> DealResponse.PipelineStageResponse.builder()
+                        .stageId(stage.getStageId())
+                        .stageName(stage.getStageName())
+                        .stageOrder(stage.getStageOrder())
+                        .stageType(stage.getStageType().name())
+                        .winProbability(stage.getWinProbability())
+                        .build())
+                .toList();
+        
+        return ApiResponse.success(stageResponses, "Stages retrieved successfully");
+    }
+    
     private DealResponse buildDealResponseWithDetails(Deal deal, PipelineStage stage) {
         DealResponse.PipelineStageResponse stageResponse = null;
         if (stage != null) {

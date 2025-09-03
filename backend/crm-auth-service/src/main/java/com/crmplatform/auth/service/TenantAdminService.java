@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,9 +35,14 @@ public class TenantAdminService {
 
     public ApiResponse<TenantStatsResponse> getDashboardStats() {
         Long tenantId = UserContext.getCurrentTenantId();
+        
+        if (tenantId == null) {
+            log.error("Tenant ID is not available in the current context");
+            throw new IllegalStateException("Tenant information is not available. Please log in again.");
+        }
 
-        int totalUsers = userRepository.findByTenantIdAndActive(tenantId).size();
-        int activeUsers = (int) userRepository.findByTenantIdAndActive(tenantId)
+        int totalUsers = userRepository.findByTenantId(tenantId).size();
+        int activeUsers = (int) userRepository.findByTenantId(tenantId)
                 .stream().filter(u -> Boolean.TRUE.equals(u.getIsActive())).count();
 
         // Fetch cross-service counts (contacts, accounts, deals, revenue, monthly stats)
@@ -98,13 +104,33 @@ public class TenantAdminService {
         Long tenantId = UserContext.getCurrentTenantId();
         Long inviterId = UserContext.getCurrentUserId();
 
-        // Enforce unique email globally via UserService check if needed (omitted here)
+        // Validate manager assignment for SALES_REP role
+        if ("SALES_REP".equals(request.getRole())) {
+            if (request.getManagerId() == null) {
+                return ApiResponse.error("Manager is required for SALES_REP role", "MANAGER_REQUIRED");
+            }
+            
+            // Validate manager exists and is a SALES_MANAGER in same tenant
+            Optional<User> managerOpt = userRepository.findById(request.getManagerId());
+            if (managerOpt.isEmpty() || 
+                !managerOpt.get().getTenantId().equals(tenantId) ||
+                !managerOpt.get().getRole().equals(User.UserRole.SALES_MANAGER) ||
+                !Boolean.TRUE.equals(managerOpt.get().getIsActive())) {
+                return ApiResponse.error("Invalid manager selected", "INVALID_MANAGER");
+            }
+        }
+
+        // Check for existing email
+        if (userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId)) {
+            return ApiResponse.error("User with this email already exists", "EMAIL_EXISTS");
+        }
 
         Invitation invitation = Invitation.builder()
                 .tenantId(tenantId)
                 .email(request.getEmail())
                 .role(User.UserRole.valueOf(request.getRole()))
                 .invitedByUserId(inviterId)
+                .managerId(request.getManagerId())
                 .token(java.util.UUID.randomUUID().toString().replaceAll("-", ""))
                 .status(Invitation.InvitationStatus.PENDING)
                 .expiresAt(java.time.LocalDateTime.now().plusDays(7))
@@ -112,7 +138,7 @@ public class TenantAdminService {
 
         invitation = invitationRepository.save(invitation);
 
-        String inviteUrl = String.format("https://app.crm.local/join?token=%s", invitation.getToken());
+        String inviteUrl = String.format("http://localhost:3000/accept-invitation?token=%s", invitation.getToken());
         try {
             emailServiceClient.sendInvitationEmail(String.valueOf(tenantId), request.getEmail(), inviteUrl, request.getRole());
         } catch (Exception e) {
@@ -169,7 +195,7 @@ public class TenantAdminService {
         Invitation inv = invitationRepository.findByTenantIdAndInvitationId(tenantId, invitationId)
                 .orElse(null);
         if (inv == null) return ApiResponse.error("Invitation not found");
-        String inviteUrl = String.format("https://app.crm.local/join?token=%s", inv.getToken());
+        String inviteUrl = String.format("http://localhost:3000/accept-invitation?token=%s", inv.getToken());
         try {
             emailServiceClient.sendInvitationEmail(String.valueOf(tenantId), inv.getEmail(), inviteUrl, inv.getRole().name());
         } catch (Exception e) {
@@ -180,6 +206,12 @@ public class TenantAdminService {
 
     public ApiResponse<String> updateSubscriptionPlan(String plan) {
         return ApiResponse.success("Updated (stub)");
+    }
+
+    public ApiResponse<List<User>> getAvailableManagers() {
+        Long tenantId = UserContext.getCurrentTenantId();
+        List<User> managers = userRepository.findByTenantIdAndRoleAndActive(tenantId, User.UserRole.SALES_MANAGER);
+        return ApiResponse.success(managers);
     }
 }
 

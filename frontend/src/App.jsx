@@ -18,6 +18,7 @@ function App() {
             <Route path="/register" element={<TenantRegistration />} />
             <Route path="/login" element={<Login />} />
             <Route path="/join" element={<AcceptInvitation />} />
+            <Route path="/accept-invitation" element={<AcceptInvitation />} />
             <Route path="/dashboard/*" element={<Dashboard />} />
           </Routes>
           <Toaster

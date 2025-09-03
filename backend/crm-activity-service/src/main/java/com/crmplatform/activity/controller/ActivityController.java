@@ -4,7 +4,6 @@ import com.crmplatform.activity.dto.ActivityResponse;
 import com.crmplatform.activity.dto.CreateActivityRequest;
 import com.crmplatform.activity.service.ActivityService;
 import com.crmplatform.common.dto.ApiResponse;
-import com.crmplatform.common.security.TenantContext;
 import com.crmplatform.common.security.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +31,7 @@ public class ActivityController {
     public ResponseEntity<ApiResponse<ActivityResponse>> createActivity(
             @Valid @RequestBody CreateActivityRequest request) {
         
-        Long tenantId = TenantContext.getCurrentTenantId();
+        Long tenantId = UserContext.getCurrentTenantId();
         Long userId = UserContext.getCurrentUserId();
         
         log.info("Creating activity for tenant: {}, user: {}", tenantId, userId);
@@ -50,7 +49,7 @@ public class ActivityController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
         
-        Long tenantId = TenantContext.getCurrentTenantId();
+        Long tenantId = UserContext.getCurrentTenantId();
         
         log.info("Retrieving timeline for contact: {}, tenant: {}", contactId, tenantId);
         
@@ -66,7 +65,7 @@ public class ActivityController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
         
-        Long tenantId = TenantContext.getCurrentTenantId();
+        Long tenantId = UserContext.getCurrentTenantId();
         
         log.info("Retrieving timeline for account: {}, tenant: {}", accountId, tenantId);
         
@@ -82,7 +81,7 @@ public class ActivityController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
         
-        Long tenantId = TenantContext.getCurrentTenantId();
+        Long tenantId = UserContext.getCurrentTenantId();
         
         log.info("Retrieving timeline for deal: {}, tenant: {}", dealId, tenantId);
         
@@ -97,7 +96,7 @@ public class ActivityController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
         
-        Long tenantId = TenantContext.getCurrentTenantId();
+        Long tenantId = UserContext.getCurrentTenantId();
         Long userId = UserContext.getCurrentUserId();
         
         log.info("Retrieving activities for user: {}, tenant: {}", userId, tenantId);
