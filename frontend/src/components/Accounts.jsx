@@ -183,11 +183,11 @@ const Accounts = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Accounts</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Accounts</h1>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
         >
           Add Account
         </button>
@@ -195,7 +195,7 @@ const Accounts = () => {
 
       {/* Search Bar */}
       <div className="card mb-6">
-        <form onSubmit={handleSearch} className="flex gap-4">
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
             placeholder="Search accounts by name or industry..."
@@ -205,7 +205,7 @@ const Accounts = () => {
           />
           <button
             type="submit"
-            className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors w-full sm:w-auto"
           >
             Search
           </button>
@@ -224,177 +224,205 @@ const Accounts = () => {
             <p className="text-gray-600">No accounts found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Account Name</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Website</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Industry</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Created</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map((account) => (
-                  <tr key={account.accountId} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium">{account.accountName}</td>
-                    <td className="py-3 px-4">
-                      {account.website ? (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Account Name</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Website</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Industry</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Created</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {accounts.map((account) => (
+                    <tr key={account.accountId} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 font-medium">{account.accountName}</td>
+                      <td className="py-3 px-4">
+                        {account.website ? (
+                          <a 
+                            href={account.website.startsWith('http') ? account.website : `https://${account.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {account.website}
+                          </a>
+                        ) : '-'}
+                      </td>
+                      <td className="py-3 px-4">{account.industry || '-'}</td>
+                      <td className="py-3 px-4">
+                        {new Date(account.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => viewAccountDetails(account.accountId)}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => openEditModal(account)}
+                            className="text-green-600 hover:text-green-800 text-sm"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {accounts.map((account) => (
+                <div key={account.accountId} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{account.accountName}</h3>
+                      {account.website && (
                         <a 
                           href={account.website.startsWith('http') ? account.website : `https://${account.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-sm text-blue-600 hover:text-blue-800"
                         >
                           {account.website}
                         </a>
-                      ) : '-'}
-                    </td>
-                    <td className="py-3 px-4">{account.industry || '-'}</td>
-                    <td className="py-3 px-4">
-                      {new Date(account.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => viewAccountDetails(account.accountId)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => openEditModal(account)}
-                          className="text-green-600 hover:text-green-800 text-sm"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => viewAccountDetails(account.accountId)}
+                        className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 border border-blue-200 rounded"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => openEditModal(account)}
+                        className="text-green-600 hover:text-green-800 text-sm px-2 py-1 border border-green-200 rounded"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-500">Industry:</span>
+                      <p className="text-gray-900">{account.industry || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-500">Created:</span>
+                      <p className="text-gray-900">{new Date(account.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
       {/* Create Account Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Create New Account</h2>
+              <h2 className="text-lg sm:text-xl font-semibold">Create New Account</h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
-
+            
             <form onSubmit={handleCreateAccount} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Name *
-                </label>
-                <input
-                  type="text"
-                  name="accountName"
-                  value={formData.accountName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Website
-                </label>
-                <input
-                  type="url"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Industry
-                </label>
-                <select
-                  name="industry"
-                  value={formData.industry}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Industry</option>
-                  <option value="Technology">Technology</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Education">Education</option>
-                  <option value="Manufacturing">Manufacturing</option>
-                  <option value="Retail">Retail</option>
-                  <option value="Real Estate">Real Estate</option>
-                  <option value="Consulting">Consulting</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              {/* Custom Fields */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Custom Fields
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Account Name *
                   </label>
-                  <button
-                    type="button"
-                    onClick={addCustomField}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    + Add Field
-                  </button>
+                  <input
+                    type="text"
+                    name="accountName"
+                    value={newAccount.accountName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
-                {Object.entries(formData.customFields).map(([fieldName, value]) => (
-                  <div key={fieldName} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={fieldName}
-                      disabled
-                      className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
-                    />
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => handleCustomFieldChange(fieldName, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeCustomField(fieldName)}
-                      className="text-red-600 hover:text-red-800 px-2"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={newAccount.website}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
-
-              <div className="flex justify-end gap-3 pt-4">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Industry
+                  </label>
+                  <input
+                    type="text"
+                    name="industry"
+                    value={newAccount.industry}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={newAccount.phoneNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address
+                </label>
+                <textarea
+                  name="address"
+                  value={newAccount.address}
+                  onChange={handleInputChange}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full sm:w-auto"
                 >
                   Create Account
                 </button>
@@ -406,8 +434,8 @@ const Accounts = () => {
 
       {/* Account Details Modal */}
       {selectedAccount && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Account Details</h2>
               <button

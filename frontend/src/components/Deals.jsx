@@ -264,14 +264,14 @@ const Deals = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Deals</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Deals</h1>
           <p className="text-gray-600 mt-1">Manage your sales pipeline and track deals</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="btn-primary flex items-center"
+          className="btn-primary flex items-center justify-center w-full sm:w-auto"
         >
           <Plus className="h-4 w-4 mr-2" />
           New Deal
@@ -297,7 +297,7 @@ const Deals = () => {
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="all">All Stages</option>
               {stages.map(stage => (
@@ -331,10 +331,10 @@ const Deals = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredDeals.map((deal) => (
               <div key={deal.dealId} className="card hover:shadow-lg transition-shadow">
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {deal.dealName}
@@ -345,24 +345,24 @@ const Deals = () => {
                       {deal.stageName}
                     </span>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 self-start sm:self-auto">
                     <button
                       onClick={() => openEditModal(deal)}
-                      className="text-gray-400 hover:text-blue-600"
+                      className="text-gray-400 hover:text-blue-600 p-1"
                       title="Edit Deal"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => openStageModal(deal)}
-                      className="text-gray-400 hover:text-primary-600"
+                      className="text-gray-400 hover:text-primary-600 p-1"
                       title="Change Stage"
                     >
                       <TrendingUp className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteDeal(deal.dealId)}
-                      className="text-gray-400 hover:text-red-600"
+                      className="text-gray-400 hover:text-red-600 p-1"
                       title="Delete Deal"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -519,15 +519,15 @@ const Deals = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="btn-secondary"
+                  className="btn-secondary w-full sm:w-auto"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary w-full sm:w-auto">
                   Create Deal
                 </button>
               </div>
@@ -579,15 +579,15 @@ const Deals = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowStageModal(false)}
-                  className="btn-secondary"
+                  className="btn-secondary w-full sm:w-auto"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary w-full sm:w-auto">
                   Update Stage
                 </button>
               </div>
@@ -710,15 +710,15 @@ const Deals = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="btn-secondary"
+                  className="btn-secondary w-full sm:w-auto"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary w-full sm:w-auto">
                   Update Deal
                 </button>
               </div>

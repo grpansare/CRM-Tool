@@ -77,6 +77,24 @@ public class EmailLog {
         MARKETING,
         SYSTEM_ALERT,
         PASSWORD_RESET,
-        VERIFICATION
+        VERIFICATION,
+        FOLLOW_UP,
+        PROPOSAL,
+        MEETING_REMINDER,
+        DEAL_UPDATE,
+        SALES_EMAIL
     }
+    
+    // Additional fields for CRM integration
+    @Column
+    private Long contactId;
+    
+    @Column
+    private Long dealId;
+    
+    @Column
+    private Long accountId;
+    
+    @Column
+    private Long userId; // User who sent the email
 }

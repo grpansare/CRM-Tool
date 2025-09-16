@@ -9,6 +9,8 @@ import {
   DollarSign,
   Activity,
 } from "lucide-react";
+import api from "../../services/api";
+import { toast } from "react-hot-toast";
 
 const SalesRepDashboard = () => {
   const [personalStats, setPersonalStats] = useState({
@@ -20,58 +22,158 @@ const SalesRepDashboard = () => {
     recentActivities: [],
     pipelineStages: [],
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch dashboard data from backend APIs
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch deals, analytics, and activities in parallel
+      const [dealsResponse, analyticsResponse, activitiesResponse] = await Promise.allSettled([
+        api.get('/deals'),
+        api.get('/analytics/comprehensive'),
+        api.get('/activities/my-activities')
+      ]);
+
+      let deals = [];
+      let analytics = null;
+      let activities = [];
+
+      // Process deals response
+      if (dealsResponse.status === 'fulfilled' && dealsResponse.value.data.success) {
+        deals = dealsResponse.value.data.data || [];
+      } else {
+        console.warn('Failed to fetch deals:', dealsResponse.reason?.response?.data?.message);
+      }
+
+      // Process analytics response
+      if (analyticsResponse.status === 'fulfilled' && analyticsResponse.value.data.success) {
+        analytics = analyticsResponse.value.data.data;
+      } else {
+        console.warn('Failed to fetch analytics:', analyticsResponse.reason?.response?.data?.message);
+      }
+
+      // Process activities response
+      if (activitiesResponse.status === 'fulfilled' && activitiesResponse.value.data.success) {
+        activities = activitiesResponse.value.data.data || [];
+      } else {
+        console.warn('Failed to fetch activities:', activitiesResponse.reason?.response?.data?.message);
+      }
+
+      // Calculate stats from deals
+      const activeDeals = deals.filter(deal => deal.stage?.name !== 'Closed Won' && deal.stage?.name !== 'Closed Lost').length;
+      const closedWonDeals = deals.filter(deal => deal.stage?.name === 'Closed Won');
+      const totalRevenue = closedWonDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+      const totalDeals = deals.length;
+      const winRate = totalDeals > 0 ? Math.round((closedWonDeals.length / totalDeals) * 100) : 0;
+      const averageDealSize = closedWonDeals.length > 0 ? Math.round(totalRevenue / closedWonDeals.length) : 0;
+
+      // Group deals by stage for pipeline overview
+      const stageGroups = deals.reduce((acc, deal) => {
+        const stageName = deal.stage?.name || 'Unknown';
+        if (!acc[stageName]) {
+          acc[stageName] = { count: 0, value: 0 };
+        }
+        acc[stageName].count++;
+        acc[stageName].value += deal.value || 0;
+        return acc;
+      }, {});
+
+      const pipelineStages = Object.entries(stageGroups).map(([stage, data]) => ({
+        stage,
+        count: data.count,
+        value: data.value
+      }));
+
+      // Format recent activities
+      const recentActivities = activities.slice(0, 4).map(activity => ({
+        type: activity.type || 'activity',
+        message: activity.content || 'Activity recorded',
+        time: formatTimeAgo(activity.timestamp)
+      }));
+
+      // Use analytics data if available, otherwise use calculated values
+      const stats = {
+        activeDeals,
+        totalRevenue,
+        winRate: analytics?.conversionRates?.winRate ? Math.round(analytics.conversionRates.winRate) : winRate,
+        averageDealSize,
+        tasksDue: 0, // TODO: Implement tasks/activities count
+        recentActivities,
+        pipelineStages
+      };
+
+      setPersonalStats(stats);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setError('Failed to load dashboard data. Please try again.');
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to format timestamp to relative time
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return 'Unknown time';
+    
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInMs = now - activityTime;
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+    
+    if (diffInDays > 0) {
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else {
+      return 'Less than an hour ago';
+    }
+  };
 
   useEffect(() => {
-    // TODO: Fetch personal performance data
-    setPersonalStats({
-      activeDeals: 12,
-      totalRevenue: 45000,
-      winRate: 75,
-      averageDealSize: 3750,
-      tasksDue: 5,
-      recentActivities: [
-        {
-          type: "deal",
-          message: "Deal 'TechCorp Contract' moved to Negotiation",
-          time: "2 hours ago",
-        },
-        {
-          type: "contact",
-          message: "New contact 'John Smith' added",
-          time: "4 hours ago",
-        },
-        {
-          type: "task",
-          message: "Follow up with 'Acme Inc' due tomorrow",
-          time: "1 day ago",
-        },
-        {
-          type: "deal",
-          message: "Deal 'Startup Software' closed - $15K",
-          time: "2 days ago",
-        },
-      ],
-      pipelineStages: [
-        { stage: "Lead", count: 3, value: 15000 },
-        { stage: "Qualified", count: 4, value: 25000 },
-        { stage: "Proposal", count: 2, value: 18000 },
-        { stage: "Negotiation", count: 2, value: 22000 },
-        { stage: "Closed Won", count: 1, value: 15000 },
-      ],
-    });
+    fetchDashboardData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchDashboardData}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
-        <p className="text-gray-600">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Dashboard</h1>
+        <p className="text-gray-600 text-sm sm:text-base">
           Track your performance and manage your deals
         </p>
       </div>
 
       {/* Personal Performance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div className="card">
           <div className="flex items-center">
             <div className="bg-blue-100 p-3 rounded-lg">
@@ -130,11 +232,11 @@ const SalesRepDashboard = () => {
       </div>
 
       {/* Pipeline Overview */}
-      <div className="card mb-8">
+      <div className="card mb-6 sm:mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           My Pipeline
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {personalStats.pipelineStages.map((stage, index) => (
             <div
               key={index}
@@ -153,7 +255,7 @@ const SalesRepDashboard = () => {
       </div>
 
       {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Quick Actions
@@ -205,11 +307,11 @@ const SalesRepDashboard = () => {
       </div>
 
       {/* Performance Metrics */}
-      <div className="card mt-8">
+      <div className="card mt-6 sm:mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Performance Metrics
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
           <div className="text-center">
             <div className="text-3xl font-bold text-blue-600">
               {personalStats.winRate}%

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../services/api.js";
 import toast from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
+import InviteUserModal from "../modals/InviteUserModal";
 import {
   Users,
   BarChart3,
@@ -28,6 +29,7 @@ const TenantAdminDashboard = () => {
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState({ stats: true, activity: true });
   const [error, setError] = useState({ stats: null, activity: null });
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -94,6 +96,11 @@ const TenantAdminDashboard = () => {
     }
   };
 
+  const handleInviteSuccess = () => {
+    // Refresh stats to update pending invitations count
+    fetchStats();
+  };
+
   useEffect(() => {
     fetchStats();
     fetchActivity();
@@ -101,21 +108,21 @@ const TenantAdminDashboard = () => {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Organization Dashboard
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 text-sm sm:text-base">
           Manage your organization and monitor performance
         </p>
       </div>
 
       {/* Organization Stats */}
       {error.stats ? (
-        <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2 flex-shrink-0" />
               <div>
                 <h3 className="text-sm font-medium text-red-800">Failed to load statistics</h3>
                 <p className="text-sm text-red-600 mt-1">{error.stats}</p>
@@ -124,7 +131,7 @@ const TenantAdminDashboard = () => {
             <button
               onClick={() => handleRetry('stats')}
               disabled={loading.stats}
-              className="flex items-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 disabled:opacity-50"
+              className="flex items-center justify-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 disabled:opacity-50 w-full sm:w-auto"
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${loading.stats ? 'animate-spin' : ''}`} />
               {loading.stats ? 'Loading...' : 'Retry'}
@@ -132,7 +139,7 @@ const TenantAdminDashboard = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="card">
             <div className="flex items-center">
               <div className="bg-blue-100 p-3 rounded-lg">
@@ -208,13 +215,16 @@ const TenantAdminDashboard = () => {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Quick Actions
           </h2>
           <div className="space-y-3">
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <button 
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <UserPlus className="h-5 w-5 text-blue-600 mr-3" />
               <span>Invite New User</span>
             </button>
@@ -295,6 +305,13 @@ const TenantAdminDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Invite User Modal */}
+      <InviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onSuccess={handleInviteSuccess}
+      />
     </div>
   );
 };

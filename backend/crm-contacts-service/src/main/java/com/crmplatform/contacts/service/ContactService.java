@@ -190,7 +190,7 @@ public class ContactService {
             account = findOrCreateAccount(request.getAccountName(), tenantId, ownerUserId);
             
             // Remove existing account association
-            accountContactRepository.deleteByContactIdAndTenantId(contact.getContactId(), tenantId);
+            accountContactRepository.removeContactAssociation(contact.getContactId(), tenantId);
             
             // Create new account association
             if (account != null) {
@@ -218,7 +218,7 @@ public class ContactService {
     
     private Account getAccountForContact(Long contactId, Long tenantId) {
         Optional<AccountContact> accountContactOpt = accountContactRepository
-                .findByContactIdAndTenantId(contactId, tenantId);
+                .findContactAssociation(contactId, tenantId);
         
         if (accountContactOpt.isPresent()) {
             Long accountId = accountContactOpt.get().getId().getAccountId();
@@ -300,5 +300,49 @@ public class ContactService {
                 .account(accountResponse)
                 .customFields(customFields)
                 .build();
+    }
+    
+    @Transactional
+    public ApiResponse<ContactResponse> linkContactToAccount(Long contactId, Long accountId) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        
+        // Find contact
+        Optional<Contact> contactOpt = contactRepository.findByTenantIdAndContactId(tenantId, contactId);
+        if (contactOpt.isEmpty()) {
+            return ApiResponse.error("Contact not found", "CONTACT_NOT_FOUND");
+        }
+        
+        // Find account
+        Optional<Account> accountOpt = accountRepository.findByTenantIdAndAccountId(tenantId, accountId);
+        if (accountOpt.isEmpty()) {
+            return ApiResponse.error("Account not found", "ACCOUNT_NOT_FOUND");
+        }
+        
+        Contact contact = contactOpt.get();
+        Account account = accountOpt.get();
+        
+        // Remove existing account association for this contact
+        accountContactRepository.removeContactAssociation(contactId, tenantId);
+        
+        // Create new account association
+        AccountContact accountContact = AccountContact.builder()
+                .id(AccountContact.AccountContactId.builder()
+                        .accountId(accountId)
+                        .contactId(contactId)
+                        .tenantId(tenantId)
+                        .build())
+                .build();
+        accountContactRepository.save(accountContact);
+        
+        log.info("Contact {} successfully linked to account {}", contactId, accountId);
+        
+        // Get custom fields for response
+        Map<String, String> customFields = customFieldService.getCustomFields(
+                tenantId, contactId, CustomFieldData.EntityType.CONTACT);
+        
+        // Build response
+        ContactResponse response = buildContactResponse(contact, account, customFields);
+        
+        return ApiResponse.success(response, "Contact linked to account successfully");
     }
 } 

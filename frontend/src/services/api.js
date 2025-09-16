@@ -52,6 +52,7 @@ api.interceptors.response.use(
     console.log("Error Status:", error.response?.status);
     console.log("Error Status Text:", error.response?.statusText);
     console.log("Error Data:", error.response?.data);
+    console.log("Request Data:", error.config?.data);
     console.log("Error Headers:", error.response?.headers);
     console.log("Request Headers:", error.config?.headers);
     

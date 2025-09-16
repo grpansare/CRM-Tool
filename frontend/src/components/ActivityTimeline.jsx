@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 
-const ActivityTimeline = ({ contactId, accountId, dealId }) => {
+const ActivityTimeline = ({ contactId, accountId, dealId, leadId }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -26,24 +26,38 @@ const ActivityTimeline = ({ contactId, accountId, dealId }) => {
     associations: {
       contacts: contactId ? [contactId] : [],
       accounts: accountId ? [accountId] : [],
-      deals: dealId ? [dealId] : []
+      deals: dealId ? [dealId] : [],
+      leads: leadId ? [leadId] : []
     }
   });
 
   useEffect(() => {
     fetchActivities();
-  }, [contactId, accountId, dealId, filterType]);
+  }, [contactId, accountId, dealId, leadId, filterType]);
 
   const fetchActivities = async () => {
     try {
       setLoading(true);
       let url = '/activities';
-      const params = new URLSearchParams();
       
-      if (contactId) params.append('contactId', contactId);
-      if (accountId) params.append('accountId', accountId);
-      if (dealId) params.append('dealId', dealId);
-      if (filterType !== 'ALL') params.append('type', filterType);
+      // Use specific timeline endpoints for better performance
+      if (contactId) {
+        url = `/activities/contacts/${contactId}/timeline`;
+      } else if (accountId) {
+        url = `/activities/accounts/${accountId}/timeline`;
+      } else if (dealId) {
+        url = `/activities/deals/${dealId}/timeline`;
+      } else if (leadId) {
+        url = `/activities/leads/${leadId}/timeline`;
+      } else {
+        url = '/activities/my-activities';
+      }
+      
+      // Add filter type as query parameter if specified
+      const params = new URLSearchParams();
+      if (filterType !== 'ALL') {
+        params.append('type', filterType);
+      }
       
       if (params.toString()) {
         url += `?${params.toString()}`;
@@ -51,7 +65,18 @@ const ActivityTimeline = ({ contactId, accountId, dealId }) => {
       
       const response = await api.get(url);
       if (response.data.success) {
-        setActivities(response.data.data);
+        // Handle paginated response structure
+        const responseData = response.data.data;
+        if (responseData && responseData.content) {
+          // Paginated response
+          setActivities(responseData.content);
+        } else if (Array.isArray(responseData)) {
+          // Direct array response
+          setActivities(responseData);
+        } else {
+          // Fallback to empty array
+          setActivities([]);
+        }
       }
     } catch (error) {
       toast.error('Failed to fetch activities');
@@ -75,7 +100,8 @@ const ActivityTimeline = ({ contactId, accountId, dealId }) => {
           associations: {
             contacts: contactId ? [contactId] : [],
             accounts: accountId ? [accountId] : [],
-            deals: dealId ? [dealId] : []
+            deals: dealId ? [dealId] : [],
+            leads: leadId ? [leadId] : []
           }
         });
         fetchActivities();
@@ -249,6 +275,11 @@ const ActivityTimeline = ({ contactId, accountId, dealId }) => {
                       {activity.associations?.deals?.length > 0 && (
                         <span className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded">
                           {activity.associations.deals.length} deal(s)
+                        </span>
+                      )}
+                      {activity.associations?.leads?.length > 0 && (
+                        <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs rounded">
+                          {activity.associations.leads.length} lead(s)
                         </span>
                       )}
                     </div>

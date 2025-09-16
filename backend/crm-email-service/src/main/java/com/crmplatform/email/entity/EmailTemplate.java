@@ -58,6 +58,10 @@ public class EmailTemplate {
         ACCOUNT_VERIFICATION,
         NOTIFICATION,
         MARKETING,
-        SYSTEM_ALERT
+        SYSTEM_ALERT,
+        FOLLOW_UP,
+        PROPOSAL,
+        MEETING_REMINDER,
+        DEAL_UPDATE
     }
 }

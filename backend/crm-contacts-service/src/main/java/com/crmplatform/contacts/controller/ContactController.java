@@ -76,4 +76,20 @@ public class ContactController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    @PutMapping("/{contactId}/account/{accountId}")
+    public ResponseEntity<ApiResponse<ContactResponse>> linkContactToAccount(
+            @PathVariable Long contactId,
+            @PathVariable Long accountId) {
+        
+        log.info("Linking contact {} to account {}", contactId, accountId);
+        
+        ApiResponse<ContactResponse> response = contactService.linkContactToAccount(contactId, accountId);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

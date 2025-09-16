@@ -55,9 +55,10 @@ public class Activity {
         private List<Long> contacts; // Array of contact_ids
         private List<Long> accounts; // Array of account_ids  
         private List<Long> deals;    // Array of deal_ids
+        private List<Long> leads;    // Array of lead_ids
     }
     
     public enum ActivityType {
-        CALL, EMAIL, MEETING, NOTE, TASK
+        CALL, EMAIL, MEETING, NOTE, TASK, LEAD_CONVERTED
     }
 }

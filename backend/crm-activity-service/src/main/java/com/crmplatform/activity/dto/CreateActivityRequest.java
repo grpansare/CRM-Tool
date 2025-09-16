@@ -34,5 +34,6 @@ public class CreateActivityRequest {
         private List<Long> contacts;
         private List<Long> accounts;
         private List<Long> deals;
+        private List<Long> leads;
     }
 }

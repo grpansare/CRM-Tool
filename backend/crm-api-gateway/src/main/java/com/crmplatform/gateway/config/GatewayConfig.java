@@ -59,7 +59,7 @@ public class GatewayConfig {
                 
                 // Sales Service Routes
                 .route("sales-service", r -> r
-                        .path("/api/v1/deals/**", "/api/v1/pipelines/**", "/api/v1/sales-manager/**")
+                        .path("/api/v1/deals/**", "/api/v1/pipelines/**", "/api/v1/sales-manager/**", "/api/v1/analytics/**", "/api/v1/leads/**")
                         .filters(f -> f
                                 .rewritePath("/api/v1/(?<segment>.*)", "/api/v1/${segment}")
                                 .circuitBreaker(config -> config
@@ -78,6 +78,17 @@ public class GatewayConfig {
                                         .setFallbackUri("forward:/fallback/activity"))
                         )
                         .uri("lb://crm-activity-service"))
+                
+                // Email Service Routes
+                .route("email-service", r -> r
+                        .path("/api/v1/email/**")
+                        .filters(f -> f
+                                .rewritePath("/api/v1/email/(?<segment>.*)", "/api/v1/email/${segment}")
+                                .circuitBreaker(config -> config
+                                        .setName("email-service-circuit-breaker")
+                                        .setFallbackUri("forward:/fallback/email"))
+                        )
+                        .uri("lb://crm-email-service"))
                 
                 // User Management Routes
                 .route("user-management", r -> r

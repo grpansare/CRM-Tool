@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import {
@@ -16,13 +16,19 @@ import {
   GitBranch,
   User,
   Plus,
+  Menu,
+  X,
+  Target,
 } from "lucide-react";
 import Contacts from "../components/Contacts.jsx";
+import Leads from "../components/Leads.jsx";
 import Deals from "../components/Deals.jsx";
 import Accounts from "../components/Accounts.jsx";
 import UsersManagement from "../components/UsersManagement.jsx";
 import Pipeline from "../components/Pipeline.jsx";
 import Settings1 from "../components/Settings.jsx";
+import Analytics from "../components/Analytics.jsx";
+import EmailTemplates from "../components/EmailTemplates.jsx";
 import TenantAdminDashboard from "../components/dashboards/TenantAdminDashboard.jsx";
 import SalesManagerDashboard from "../components/dashboards/SalesManagerDashboard.jsx";
 import SalesRepDashboard from "../components/dashboards/SalesRepDashboard.jsx";
@@ -30,6 +36,7 @@ import SalesRepDashboard from "../components/dashboards/SalesRepDashboard.jsx";
 const Dashboard = () => {
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -63,16 +70,28 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 mr-2"
+              >
+                {sidebarOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+              
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg mr-3 flex items-center justify-center">
                 <div className="w-3 h-3 bg-white rounded-sm"></div>
               </div>
-              <h1 className="text-2xl font-bold text-blue-600">
+              <h1 className="text-xl sm:text-2xl font-bold text-blue-600">
                 CRMFlow
               </h1>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <button className="p-2 text-gray-400 hover:text-gray-600 hidden sm:block">
                 <Search className="h-5 w-5" />
               </button>
               <button className="p-2 text-gray-400 hover:text-gray-600 relative">
@@ -80,8 +99,8 @@ const Dashboard = () => {
                 <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
               </button>
 
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="text-right hidden sm:block">
                   <p className="text-sm font-medium text-gray-900">
                     {user.firstName} {user.lastName}
                   </p>
@@ -97,8 +116,23 @@ const Dashboard = () => {
       </nav>
 
       <div className="flex">
+        {/* Mobile sidebar overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 z-40 lg:hidden" 
+            onClick={() => setSidebarOpen(false)}
+          >
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-75"></div>
+          </div>
+        )}
+        
         {/* Sidebar */}
-        <div className="w-64 bg-white shadow-sm min-h-screen">
+        <div className={`
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:static lg:inset-0
+          fixed z-50 flex-shrink-0 w-64 bg-white shadow-sm min-h-screen
+          transition-transform duration-300 ease-in-out
+        `}>
           <nav className="mt-8">
             <div className="px-4 space-y-2">
               <Link
@@ -107,6 +141,14 @@ const Dashboard = () => {
               >
                 <BarChart3 className="h-5 w-5 mr-3" />
                 Dashboard
+              </Link>
+
+              <Link
+                to="/dashboard/leads"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+              >
+                <Target className="h-5 w-5 mr-3" />
+                Leads
               </Link>
 
               <Link
@@ -139,6 +181,24 @@ const Dashboard = () => {
               >
                 <Building className="h-5 w-5 mr-3" />
                 Accounts
+              </Link>
+
+              {(user.role === "TENANT_ADMIN" || user.role === "SALES_MANAGER" || user.role === "SALES_REP") && (
+                <Link
+                  to="/dashboard/analytics"
+                  className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+                >
+                  <TrendingUp className="h-5 w-5 mr-3" />
+                  Analytics
+                </Link>
+              )}
+
+              <Link
+                to="/dashboard/email-templates"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+              >
+                <Calendar className="h-5 w-5 mr-3" />
+                Email Templates
               </Link>
 
               {(user.role === "TENANT_ADMIN" ||
@@ -174,13 +234,16 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-0">
           <Routes>
             <Route path="/" element={<RoleBasedDashboard />} />
+            <Route path="/leads" element={<Leads />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/deals" element={<Deals />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/accounts" element={<Accounts />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/email-templates" element={<EmailTemplates />} />
             <Route path="/users" element={<UsersManagement />} />
             <Route path="/settings" element={<Settings1 />} />
           </Routes>
@@ -214,7 +277,7 @@ const DashboardOverview = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div className="card">
           <div className="flex items-center">
             <div className="bg-primary-100 p-3 rounded-lg">
@@ -267,12 +330,19 @@ const DashboardOverview = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Quick Actions
           </h2>
           <div className="space-y-3">
+            <Link
+              to="/dashboard/leads"
+              className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+            >
+              <Plus className="h-5 w-5 text-primary-600 mr-3" />
+              <span>Add New Lead</span>
+            </Link>
             <Link
               to="/dashboard/contacts"
               className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50"

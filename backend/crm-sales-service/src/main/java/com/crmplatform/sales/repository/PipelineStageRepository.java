@@ -45,4 +45,8 @@ public interface PipelineStageRepository extends JpaRepository<PipelineStage, Lo
     // Method needed by DealService for getting all stages ordered
     @Query("SELECT ps FROM PipelineStage ps WHERE ps.tenantId = :tenantId ORDER BY ps.stageOrder")
     List<PipelineStage> findByTenantIdOrderByStageOrder(@Param("tenantId") Long tenantId);
+    
+    // Method needed by LeadConversionService for getting first stage
+    @Query("SELECT ps FROM PipelineStage ps WHERE ps.tenantId = :tenantId ORDER BY ps.stageOrder LIMIT 1")
+    Optional<PipelineStage> findFirstByTenantIdOrderByStageOrder(@Param("tenantId") Long tenantId);
 } 

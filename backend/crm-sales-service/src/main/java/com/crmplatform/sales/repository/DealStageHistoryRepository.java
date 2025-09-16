@@ -13,6 +13,10 @@ import java.util.Optional;
 @Repository
 public interface DealStageHistoryRepository extends JpaRepository<DealStageHistory, Long> {
     
+    @Query("SELECT dsh FROM DealStageHistory dsh WHERE dsh.tenantId = :tenantId AND dsh.dealId = :dealId ORDER BY dsh.changedAt ASC")
+    List<DealStageHistory> findByTenantIdAndDealIdOrderByChangedAt(@Param("tenantId") Long tenantId, 
+                                                                 @Param("dealId") Long dealId);
+    
     @Query("SELECT dsh FROM DealStageHistory dsh WHERE dsh.tenantId = :tenantId AND dsh.dealId = :dealId ORDER BY dsh.changedAt DESC")
     List<DealStageHistory> findByTenantIdAndDealIdOrderByChangedAtDesc(@Param("tenantId") Long tenantId, 
                                                                      @Param("dealId") Long dealId);

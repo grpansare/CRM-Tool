@@ -14,12 +14,15 @@ import java.util.Optional;
 public interface AccountContactRepository extends JpaRepository<AccountContact, AccountContact.AccountContactId> {
     
     @Query("SELECT ac FROM AccountContact ac WHERE ac.id.contactId = :contactId AND ac.id.tenantId = :tenantId")
-    Optional<AccountContact> findByContactIdAndTenantId(@Param("contactId") Long contactId, @Param("tenantId") Long tenantId);
+    Optional<AccountContact> findContactAssociation(@Param("contactId") Long contactId, @Param("tenantId") Long tenantId);
     
     @Query("SELECT ac FROM AccountContact ac WHERE ac.id.accountId = :accountId AND ac.id.tenantId = :tenantId")
-    List<AccountContact> findByAccountIdAndTenantId(@Param("accountId") Long accountId, @Param("tenantId") Long tenantId);
+    List<AccountContact> findAccountAssociations(@Param("accountId") Long accountId, @Param("tenantId") Long tenantId);
     
     @Modifying
     @Query("DELETE FROM AccountContact ac WHERE ac.id.contactId = :contactId AND ac.id.tenantId = :tenantId")
-    void deleteByContactIdAndTenantId(@Param("contactId") Long contactId, @Param("tenantId") Long tenantId);
+    void removeContactAssociation(@Param("contactId") Long contactId, @Param("tenantId") Long tenantId);
+    
+    @Query("SELECT COUNT(ac) FROM AccountContact ac WHERE ac.id.accountId = :accountId AND ac.id.tenantId = :tenantId")
+    Long countContactsForAccount(@Param("accountId") Long accountId, @Param("tenantId") Long tenantId);
 }

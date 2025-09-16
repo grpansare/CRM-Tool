@@ -57,4 +57,44 @@ public interface DealRepository extends JpaRepository<Deal, Long> {
     // Method needed by SalesManagerService
     @Query("SELECT d FROM Deal d WHERE d.tenantId = :tenantId")
     List<Deal> findByTenantId(@Param("tenantId") Long tenantId);
+    
+    // Analytics methods
+    @Query("SELECT d FROM Deal d JOIN PipelineStage ps ON d.stageId = ps.stageId " +
+           "WHERE d.tenantId = :tenantId AND ps.stageType = 'OPEN'")
+    List<Deal> findOpenDealsByTenantId(@Param("tenantId") Long tenantId);
+    
+    @Query("SELECT d FROM Deal d JOIN PipelineStage ps ON d.stageId = ps.stageId " +
+           "WHERE d.tenantId = :tenantId AND ps.stageType IN ('WON', 'LOST') " +
+           "AND d.createdAt >= :afterDate")
+    List<Deal> findClosedDealsAfterDate(@Param("tenantId") Long tenantId, 
+                                       @Param("afterDate") java.time.LocalDateTime afterDate);
+    
+    @Query("SELECT d FROM Deal d WHERE d.tenantId = :tenantId AND d.createdAt >= :afterDate")
+    List<Deal> findDealsAfterDate(@Param("tenantId") Long tenantId, 
+                                 @Param("afterDate") java.time.LocalDateTime afterDate);
+    
+    // Account-level deal aggregation methods
+    @Query("SELECT SUM(d.amount) FROM Deal d WHERE d.tenantId = :tenantId AND d.accountId = :accountId")
+    BigDecimal getTotalDealValueByAccount(@Param("tenantId") Long tenantId, 
+                                         @Param("accountId") Long accountId);
+    
+    @Query("SELECT COUNT(d) FROM Deal d WHERE d.tenantId = :tenantId AND d.accountId = :accountId")
+    Long countDealsByAccount(@Param("tenantId") Long tenantId, 
+                            @Param("accountId") Long accountId);
+    
+    @Query("SELECT SUM(d.amount) FROM Deal d JOIN PipelineStage ps ON d.stageId = ps.stageId " +
+           "WHERE d.tenantId = :tenantId AND d.accountId = :accountId AND ps.stageType = 'WON'")
+    BigDecimal getWonDealValueByAccount(@Param("tenantId") Long tenantId, 
+                                       @Param("accountId") Long accountId);
+    
+    @Query("SELECT COUNT(d) FROM Deal d JOIN PipelineStage ps ON d.stageId = ps.stageId " +
+           "WHERE d.tenantId = :tenantId AND d.accountId = :accountId AND ps.stageType = 'WON'")
+    Long countWonDealsByAccount(@Param("tenantId") Long tenantId, 
+                               @Param("accountId") Long accountId);
+    
+    @Query("SELECT d FROM Deal d JOIN PipelineStage ps ON d.stageId = ps.stageId " +
+           "WHERE d.tenantId = :tenantId AND d.accountId = :accountId AND ps.stageType = 'OPEN' " +
+           "ORDER BY d.amount DESC")
+    List<Deal> findOpenDealsByAccountOrderByAmount(@Param("tenantId") Long tenantId, 
+                                                  @Param("accountId") Long accountId);
 }

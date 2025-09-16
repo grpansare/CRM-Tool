@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -36,6 +37,7 @@ public class ActivityService {
                     .contacts(request.getAssociations().getContacts())
                     .accounts(request.getAssociations().getAccounts())
                     .deals(request.getAssociations().getDeals())
+                    .leads(request.getAssociations().getLeads())
                     .build();
         }
         
@@ -55,7 +57,7 @@ public class ActivityService {
         Activity savedActivity = activityRepository.save(activity);
         log.info("Activity created successfully with ID: {}", savedActivity.getId());
         
-        // Publish Activity.Created event - DISABLED FOR NOW
+        // Publish Activity.Created event - Disabled for now
         // eventPublisher.publishActivityCreated(savedActivity);
         
         return mapToResponse(savedActivity);
@@ -88,6 +90,15 @@ public class ActivityService {
         return activities.map(this::mapToResponse);
     }
     
+    public Page<ActivityResponse> getLeadTimeline(Long leadId, Long tenantId, int page, int size) {
+        log.info("Retrieving timeline for lead: {}, tenant: {}", leadId, tenantId);
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+        Page<Activity> activities = activityRepository.findByTenantIdAndLeadId(tenantId, leadId, pageable);
+        
+        return activities.map(this::mapToResponse);
+    }
+    
     public Page<ActivityResponse> getUserActivities(Long userId, Long tenantId, int page, int size) {
         log.info("Retrieving activities for user: {}, tenant: {}", userId, tenantId);
         
@@ -95,6 +106,33 @@ public class ActivityService {
         Page<Activity> activities = activityRepository.findByTenantIdAndUserIdOrderByTimestampDesc(tenantId, userId, pageable);
         
         return activities.map(this::mapToResponse);
+    }
+    
+    // Company-wide activity tracking methods
+    public Page<ActivityResponse> getCompanyActivities(List<Long> accountIds, Long tenantId, int page, int size) {
+        log.info("Retrieving company-wide activities for {} accounts, tenant: {}", accountIds.size(), tenantId);
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+        Page<Activity> activities = activityRepository.findByTenantIdAndAccountIds(tenantId, accountIds, pageable);
+        
+        return activities.map(this::mapToResponse);
+    }
+    
+    public List<ActivityResponse> getRecentCompanyActivities(List<Long> accountIds, Long tenantId, int days) {
+        log.info("Retrieving recent company activities for {} accounts, tenant: {}, days: {}", accountIds.size(), tenantId, days);
+        
+        LocalDateTime since = LocalDateTime.now().minusDays(days);
+        List<Activity> activities = activityRepository.findRecentActivitiesByAccountIds(tenantId, accountIds, since);
+        
+        return activities.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+    
+    public Long getActivityCountForAccount(Long accountId, Long tenantId) {
+        log.info("Getting activity count for account: {}, tenant: {}", accountId, tenantId);
+        
+        return activityRepository.countByTenantIdAndAccountId(tenantId, accountId);
     }
     
     private String generateActivityId() {
@@ -108,6 +146,7 @@ public class ActivityService {
                     .contacts(activity.getAssociations().getContacts())
                     .accounts(activity.getAssociations().getAccounts())
                     .deals(activity.getAssociations().getDeals())
+                    .leads(activity.getAssociations().getLeads())
                     .build();
         }
         

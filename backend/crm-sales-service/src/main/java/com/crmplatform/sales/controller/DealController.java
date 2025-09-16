@@ -1,6 +1,7 @@
 package com.crmplatform.sales.controller;
 
 import com.crmplatform.common.dto.ApiResponse;
+import com.crmplatform.sales.dto.AccountDealSummaryResponse;
 import com.crmplatform.sales.dto.CreateDealRequest;
 import com.crmplatform.sales.dto.DealResponse;
 import com.crmplatform.sales.dto.UpdateDealStageRequest;
@@ -74,14 +75,32 @@ public class DealController {
             @PathVariable Long dealId,
             @Valid @RequestBody UpdateDealStageRequest request) {
         
-        log.info("Updating deal {} stage to {}", dealId, request.getNewStageId());
-        
-        ApiResponse<DealResponse> response = dealService.updateDealStage(dealId, request);
-        
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
+        try {
+            log.info("=== DEAL STAGE UPDATE REQUEST === DealId: {}, NewStageId: {}", dealId, request.getNewStageId());
+            log.info("Request object: {}", request);
+            
+            if (request == null) {
+                log.error("Request body is null");
+                return ResponseEntity.badRequest().body(ApiResponse.error("Request body is required", "INVALID_REQUEST"));
+            }
+            
+            if (request.getNewStageId() == null) {
+                log.error("NewStageId is null in request: {}", request);
+                return ResponseEntity.badRequest().body(ApiResponse.error("New stage ID is required", "INVALID_STAGE_ID"));
+            }
+            
+            ApiResponse<DealResponse> response = dealService.updateDealStage(dealId, request);
+            
+            if (response.isSuccess()) {
+                log.info("Deal stage update successful");
+                return ResponseEntity.ok(response);
+            } else {
+                log.error("Deal stage update failed: {}", response.getMessage());
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            log.error("Exception in updateDealStage: ", e);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Internal server error: " + e.getMessage(), "INTERNAL_ERROR"));
         }
     }
     
@@ -159,6 +178,28 @@ public class DealController {
         } else {
             return ResponseEntity.badRequest().body(response);
         }
+    }
+    
+    @GetMapping("/account/{accountId}/summary")
+    public ResponseEntity<ApiResponse<AccountDealSummaryResponse>> getAccountDealSummary(@PathVariable Long accountId) {
+        log.info("Getting deal summary for account: {}", accountId);
+        
+        ApiResponse<AccountDealSummaryResponse> response = dealService.getAccountDealSummary(accountId);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/accounts/summaries")
+    public ResponseEntity<ApiResponse<List<AccountDealSummaryResponse>>> getAccountDealSummaries(
+            @RequestBody List<Long> accountIds) {
+        log.info("Getting deal summaries for {} accounts", accountIds.size());
+        
+        ApiResponse<List<AccountDealSummaryResponse>> response = dealService.getAccountDealSummaries(accountIds);
+        return ResponseEntity.ok(response);
     }
     
 }

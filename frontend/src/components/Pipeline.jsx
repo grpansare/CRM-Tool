@@ -147,6 +147,24 @@ const Pipeline = () => {
 
       if (sourceIndex === targetIndex) return;
 
+      // Optimistic UI update - reorder stages immediately
+      const newStages = [...selectedPipeline.stages];
+      const [movedStage] = newStages.splice(sourceIndex, 1);
+      newStages.splice(targetIndex, 0, movedStage);
+      
+      // Update stage orders
+      const updatedStages = newStages.map((stage, index) => ({
+        ...stage,
+        stageOrder: index + 1
+      }));
+
+      const updatedPipeline = {
+        ...selectedPipeline,
+        stages: updatedStages
+      };
+
+      setSelectedPipeline(updatedPipeline);
+
       try {
         await api.put(`/pipelines/stages/${item.stageId}`, {
           pipelineId: selectedPipeline.pipelineId,
@@ -156,24 +174,59 @@ const Pipeline = () => {
           winProbability: item.winProbability
         });
         toast.success('Stage reordered successfully');
+        // Sync with server to get authoritative state
         fetchPipelines();
       } catch (error) {
         toast.error('Failed to reorder stage');
         console.error('API error:', error.response?.data || error.message);
+        // Revert optimistic update on error
+        fetchPipelines();
       }
     } else if (type === 'deal') {
       // Handle deal movement
       if (item.stageId === targetStage.stageId) return;
+
+      // Optimistic UI update - move deal immediately
+      const newPipeline = { ...selectedPipeline };
+      const newStages = newPipeline.stages.map(stage => ({ ...stage, deals: [...(stage.deals || [])] }));
+      
+      // Find source and target stages
+      const sourceStage = newStages.find(s => s.stageId === item.stageId);
+      const targetStageObj = newStages.find(s => s.stageId === targetStage.stageId);
+      
+      if (sourceStage && targetStageObj) {
+        // Remove deal from source stage
+        const dealIndex = sourceStage.deals.findIndex(d => d.dealId === item.dealId);
+        if (dealIndex !== -1) {
+          const [movedDeal] = sourceStage.deals.splice(dealIndex, 1);
+          // Add deal to target stage
+          targetStageObj.deals.push(movedDeal);
+          
+          // Update deal counts
+          sourceStage.dealCount = (sourceStage.dealCount || 0) - 1;
+          targetStageObj.dealCount = (targetStageObj.dealCount || 0) + 1;
+        }
+      }
+
+      const updatedPipeline = {
+        ...newPipeline,
+        stages: newStages
+      };
+
+      setSelectedPipeline(updatedPipeline);
 
       try {
         await api.put(`/deals/${item.dealId}/stage`, {
           newStageId: targetStage.stageId
         });
         toast.success('Deal moved successfully');
+        // Sync with server to get authoritative state
         fetchPipelines();
       } catch (error) {
         toast.error('Failed to move deal');
         console.error('API error:', error.response?.data || error.message);
+        // Revert optimistic update on error
+        fetchPipelines();
       }
     }
   };
@@ -206,9 +259,9 @@ const Pipeline = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-gray-900">Sales Pipeline</h1>
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Sales Pipeline</h1>
           {pipelines.length > 1 && (
             <select
               value={selectedPipeline?.pipelineId || ''}
@@ -216,7 +269,7 @@ const Pipeline = () => {
                 const pipeline = pipelines.find(p => p.pipelineId === parseInt(e.target.value));
                 setSelectedPipeline(pipeline);
               }}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {pipelines.map(pipeline => (
                 <option key={pipeline.pipelineId} value={pipeline.pipelineId}>
@@ -226,7 +279,7 @@ const Pipeline = () => {
             </select>
           )}
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => {
               setEditingStage(null);
@@ -238,14 +291,14 @@ const Pipeline = () => {
               });
               setShowStageModal(true);
             }}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2"
           >
             <Plus className="h-4 w-4" />
             <span>Add Stage</span>
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"
           >
             <Plus className="h-4 w-4" />
             <span>New Pipeline</span>
@@ -255,20 +308,20 @@ const Pipeline = () => {
 
       {/* Pipeline Stats */}
       {selectedPipeline && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{selectedPipeline.totalDeals}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{selectedPipeline.totalDeals}</div>
               <div className="text-sm text-gray-600">Total Deals</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {formatCurrency(selectedPipeline.totalValue)}
               </div>
               <div className="text-sm text-gray-600">Pipeline Value</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">
                 {selectedPipeline.stages?.filter(s => s.stageType === 'OPEN').length || 0}
               </div>
               <div className="text-sm text-gray-600">Active Stages</div>
@@ -280,11 +333,11 @@ const Pipeline = () => {
       {/* Pipeline Board */}
       {selectedPipeline && selectedPipeline.stages && (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <div className="flex space-x-4 p-6 min-w-max">
+          <div className="flex space-x-4 p-4 sm:p-6 min-w-max">
             {selectedPipeline.stages.map((stage, stageIndex) => (
               <div
                 key={`stage-${stage.stageId}`}
-                className="flex-shrink-0 w-80"
+                className="flex-shrink-0 w-72 sm:w-80"
                 draggable
                 onDragStart={(e) => handleDragStart(e, stage, 'stage')}
                 onDragEnd={handleDragEnd}
@@ -376,8 +429,8 @@ const Pipeline = () => {
 
       {/* Create Pipeline Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Create New Pipeline</h2>
             <form onSubmit={handleCreatePipeline}>
               <div className="mb-4">
@@ -392,17 +445,17 @@ const Pipeline = () => {
                   required
                 />
               </div>
-              <div className="flex justify-end space-x-2">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full sm:w-auto"
                 >
                   Create Pipeline
                 </button>
@@ -414,8 +467,8 @@ const Pipeline = () => {
 
       {/* Create/Edit Stage Modal */}
       {showStageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">
               {editingStage ? 'Edit Stage' : 'Create New Stage'}
             </h2>
@@ -475,20 +528,20 @@ const Pipeline = () => {
                   />
                 </div>
               </div>
-              <div className="flex justify-end space-x-2 mt-6">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
                 <button
                   type="button"
                   onClick={() => {
                     setShowStageModal(false);
                     setEditingStage(null);
                   }}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full sm:w-auto"
                 >
                   {editingStage ? 'Update Stage' : 'Create Stage'}
                 </button>

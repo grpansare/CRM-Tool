@@ -97,17 +97,17 @@ const SalesManagerDashboard = () => {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Sales Manager Dashboard
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 text-sm sm:text-base">
           Monitor team performance and sales analytics
         </p>
       </div>
 
       {/* Team Performance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div className="card">
           <div className="flex items-center">
             <div className="bg-blue-100 p-3 rounded-lg">
@@ -166,7 +166,7 @@ const SalesManagerDashboard = () => {
       </div>
 
       {/* Team Performance Table */}
-      <div className="card mb-8">
+      <div className="card mb-6 sm:mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Team Performance
         </h2>
@@ -235,7 +235,7 @@ const SalesManagerDashboard = () => {
       </div>
 
       {/* Quick Actions & Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Quick Actions

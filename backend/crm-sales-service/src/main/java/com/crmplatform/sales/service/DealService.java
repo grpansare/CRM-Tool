@@ -2,6 +2,7 @@ package com.crmplatform.sales.service;
 
 import com.crmplatform.common.dto.ApiResponse;
 import com.crmplatform.common.security.UserContext;
+import com.crmplatform.sales.dto.AccountDealSummaryResponse;
 import com.crmplatform.sales.dto.CreateDealRequest;
 import com.crmplatform.sales.dto.DealResponse;
 import com.crmplatform.sales.dto.UpdateDealStageRequest;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -31,7 +33,7 @@ public class DealService {
     private final PipelineStageRepository pipelineStageRepository;
     private final DealStageHistoryRepository dealStageHistoryRepository;
     private final ContactIntegrationService contactIntegrationService;
-    private final EventPublisher eventPublisher;
+    // private final EventPublisher eventPublisher; // Disabled until RabbitMQ is configured
     
     @Transactional
     public ApiResponse<DealResponse> createDeal(CreateDealRequest request) {
@@ -80,7 +82,7 @@ public class DealService {
         
         dealStageHistoryRepository.save(initialHistory);
         
-        // Publish event (DISABLED - RabbitMQ not required)
+        // Publish event - Enable automation (Disabled until RabbitMQ is configured)
         // eventPublisher.publishDealCreated(deal);
         
         // Build response with contact and account details
@@ -94,17 +96,24 @@ public class DealService {
         Long tenantId = UserContext.getCurrentTenantId();
         Long ownerUserId = UserContext.getCurrentUserId();
         
+        log.info("=== UPDATE DEAL STAGE DEBUG === DealId: {}, NewStageId: {}, TenantId: {}, UserId: {}", 
+                 dealId, request.getNewStageId(), tenantId, ownerUserId);
+        
         // Get the deal
         Optional<Deal> dealOpt = dealRepository.findByTenantIdAndDealId(tenantId, dealId);
         if (dealOpt.isEmpty()) {
+            log.warn("Deal not found: dealId={}, tenantId={}", dealId, tenantId);
             return ApiResponse.error("Deal not found", "DEAL_NOT_FOUND");
         }
         
         Deal deal = dealOpt.get();
+        log.info("Found deal: dealId={}, ownerId={}, currentStageId={}", deal.getDealId(), deal.getOwnerUserId(), deal.getStageId());
         
-        // Validate user permissions (deal owner or manager)
-        if (!deal.getOwnerUserId().equals(ownerUserId)) {
-            // TODO: Add manager role check
+        // Validate user permissions (deal owner or manager) - Allow managers to update any deal
+        String userRole = UserContext.getCurrentUserRole();
+        if (!deal.getOwnerUserId().equals(ownerUserId) && 
+            !"SALES_MANAGER".equals(userRole) && !"TENANT_ADMIN".equals(userRole)) {
+            log.warn("Insufficient permissions: userId={}, dealOwnerId={}, userRole={}", ownerUserId, deal.getOwnerUserId(), userRole);
             return ApiResponse.error("Insufficient permissions", "INSUFFICIENT_PERMISSIONS");
         }
         
@@ -113,8 +122,11 @@ public class DealService {
                 .findByTenantIdAndStageId(tenantId, request.getNewStageId());
         
         if (newStage.isEmpty()) {
+            log.warn("Invalid stage ID: stageId={}, tenantId={}", request.getNewStageId(), tenantId);
             return ApiResponse.error("Invalid stage ID", "INVALID_STAGE");
         }
+        
+        log.info("Stage validation passed: stageId={}, stageName={}", newStage.get().getStageId(), newStage.get().getStageName());
         
         Long oldStageId = deal.getStageId();
         
@@ -143,7 +155,7 @@ public class DealService {
         deal.setStageId(request.getNewStageId());
         deal = dealRepository.save(deal);
         
-        // Publish event (DISABLED - RabbitMQ not required)
+        // Publish event - Enable automation (Disabled until RabbitMQ is configured)
         // eventPublisher.publishDealStageChanged(deal, oldStageId, request.getNewStageId());
         
         // Build response with contact and account details
@@ -347,6 +359,78 @@ public class DealService {
                 .toList();
         
         return ApiResponse.success(stageResponses, "Stages retrieved successfully");
+    }
+    
+    // Account-level deal aggregation methods
+    public ApiResponse<AccountDealSummaryResponse> getAccountDealSummary(Long accountId) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        
+        // Validate account exists
+        if (!contactIntegrationService.validateAccount(accountId)) {
+            return ApiResponse.error("Account not found", "ACCOUNT_NOT_FOUND");
+        }
+        
+        // Get account details
+        Map<String, Object> accountDetails = contactIntegrationService.getAccountDetails(accountId);
+        String accountName = accountDetails != null ? (String) accountDetails.get("accountName") : "Unknown Account";
+        
+        // Get deal aggregation data
+        Long totalDeals = dealRepository.countDealsByAccount(tenantId, accountId);
+        BigDecimal totalDealValue = dealRepository.getTotalDealValueByAccount(tenantId, accountId);
+        Long wonDeals = dealRepository.countWonDealsByAccount(tenantId, accountId);
+        BigDecimal wonDealValue = dealRepository.getWonDealValueByAccount(tenantId, accountId);
+        
+        // Get top open deals
+        List<Deal> topOpenDeals = dealRepository.findOpenDealsByAccountOrderByAmount(tenantId, accountId);
+        List<DealResponse> topOpenDealResponses = topOpenDeals.stream()
+                .limit(5) // Top 5 deals
+                .map(deal -> {
+                    Optional<PipelineStage> stage = pipelineStageRepository
+                            .findByTenantIdAndStageId(tenantId, deal.getStageId());
+                    return buildDealResponseWithDetails(deal, stage.orElse(null));
+                })
+                .toList();
+        
+        // Handle null values
+        if (totalDealValue == null) totalDealValue = BigDecimal.ZERO;
+        if (wonDealValue == null) wonDealValue = BigDecimal.ZERO;
+        if (totalDeals == null) totalDeals = 0L;
+        if (wonDeals == null) wonDeals = 0L;
+        
+        AccountDealSummaryResponse summary = new AccountDealSummaryResponse(
+                accountId, accountName, totalDeals, totalDealValue, wonDeals, wonDealValue);
+        summary.setTopOpenDeals(topOpenDealResponses);
+        
+        return ApiResponse.success(summary, "Account deal summary retrieved successfully");
+    }
+    
+    public ApiResponse<List<AccountDealSummaryResponse>> getAccountDealSummaries(List<Long> accountIds) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        
+        List<AccountDealSummaryResponse> summaries = accountIds.stream()
+                .map(accountId -> {
+                    // Get account details
+                    Map<String, Object> accountDetails = contactIntegrationService.getAccountDetails(accountId);
+                    String accountName = accountDetails != null ? (String) accountDetails.get("accountName") : "Unknown Account";
+                    
+                    // Get deal aggregation data
+                    Long totalDeals = dealRepository.countDealsByAccount(tenantId, accountId);
+                    BigDecimal totalDealValue = dealRepository.getTotalDealValueByAccount(tenantId, accountId);
+                    Long wonDeals = dealRepository.countWonDealsByAccount(tenantId, accountId);
+                    BigDecimal wonDealValue = dealRepository.getWonDealValueByAccount(tenantId, accountId);
+                    
+                    // Handle null values
+                    if (totalDealValue == null) totalDealValue = BigDecimal.ZERO;
+                    if (wonDealValue == null) wonDealValue = BigDecimal.ZERO;
+                    if (totalDeals == null) totalDeals = 0L;
+                    if (wonDeals == null) wonDeals = 0L;
+                    
+                    return new AccountDealSummaryResponse(
+                            accountId, accountName, totalDeals, totalDealValue, wonDeals, wonDealValue);
+                })
+                .toList();
+        
+        return ApiResponse.success(summaries, "Account deal summaries retrieved successfully");
     }
     
     private DealResponse buildDealResponseWithDetails(Deal deal, PipelineStage stage) {

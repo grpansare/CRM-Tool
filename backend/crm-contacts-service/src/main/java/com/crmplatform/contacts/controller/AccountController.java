@@ -2,6 +2,7 @@ package com.crmplatform.contacts.controller;
 
 import com.crmplatform.common.dto.ApiResponse;
 import com.crmplatform.contacts.dto.AccountResponse;
+import com.crmplatform.contacts.dto.AccountHierarchyResponse;
 import com.crmplatform.contacts.dto.ContactResponse;
 import com.crmplatform.contacts.dto.CreateAccountRequest;
 import com.crmplatform.contacts.service.AccountService;
@@ -83,6 +84,27 @@ public class AccountController {
         log.info("Getting contacts for account: {}", accountId);
         
         ApiResponse<List<ContactResponse>> response = accountService.getAccountContacts(accountId);
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{accountId}/hierarchy")
+    public ResponseEntity<ApiResponse<AccountHierarchyResponse>> getAccountHierarchy(@PathVariable Long accountId) {
+        log.info("Getting account hierarchy for: {}", accountId);
+        
+        ApiResponse<AccountHierarchyResponse> response = accountService.getAccountHierarchy(accountId);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @GetMapping("/hierarchy/parents")
+    public ResponseEntity<ApiResponse<List<AccountHierarchyResponse>>> getParentAccounts() {
+        log.info("Getting all parent accounts");
+        
+        ApiResponse<List<AccountHierarchyResponse>> response = accountService.getParentAccounts();
         return ResponseEntity.ok(response);
     }
 } 
