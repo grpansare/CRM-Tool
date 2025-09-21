@@ -5,9 +5,12 @@ import com.crmplatform.sales.dto.LeadResponse;
 import com.crmplatform.sales.dto.UpdateLeadRequest;
 import com.crmplatform.sales.dto.ConvertLeadRequest;
 import com.crmplatform.sales.dto.ConvertLeadResponse;
+import com.crmplatform.sales.dto.SetDispositionRequest;
+import com.crmplatform.sales.dto.DispositionHistoryResponse;
 import com.crmplatform.sales.entity.Lead;
 import com.crmplatform.sales.entity.LeadSource;
 import com.crmplatform.sales.entity.LeadStatus;
+import com.crmplatform.sales.entity.LeadDisposition;
 import com.crmplatform.sales.service.LeadService;
 import com.crmplatform.sales.service.LeadConversionService;
 import com.crmplatform.sales.service.LeadScoringService;
@@ -254,6 +257,68 @@ public class LeadController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to recalculate lead score: " + e.getMessage()));
+        }
+    }
+    
+    // Disposition Management Endpoints
+    
+    @PostMapping("/{leadId}/disposition")
+    public ResponseEntity<ApiResponse<LeadResponse>> setLeadDisposition(
+            @PathVariable Long leadId,
+            @Valid @RequestBody SetDispositionRequest request) {
+        try {
+            LeadResponse updatedLead = leadService.setLeadDisposition(leadId, request);
+            return ResponseEntity.ok(ApiResponse.success(updatedLead));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to set lead disposition: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/{leadId}/disposition")
+    public ResponseEntity<ApiResponse<DispositionHistoryResponse>> getCurrentDisposition(@PathVariable Long leadId) {
+        try {
+            DispositionHistoryResponse disposition = leadService.getCurrentDisposition(leadId);
+            if (disposition == null) {
+                return ResponseEntity.ok(ApiResponse.success(null, "No disposition set for this lead"));
+            }
+            return ResponseEntity.ok(ApiResponse.success(disposition));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get lead disposition: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/follow-up-required")
+    public ResponseEntity<ApiResponse<List<LeadResponse>>> getLeadsRequiringFollowUp() {
+        try {
+            List<LeadResponse> leads = leadService.getLeadsRequiringFollowUp();
+            return ResponseEntity.ok(ApiResponse.success(leads));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get leads requiring follow-up: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/disposition/{disposition}")
+    public ResponseEntity<ApiResponse<List<LeadResponse>>> getLeadsByDisposition(@PathVariable LeadDisposition disposition) {
+        try {
+            List<LeadResponse> leads = leadService.getLeadsByDisposition(disposition);
+            return ResponseEntity.ok(ApiResponse.success(leads));	
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get leads by disposition: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/dispositions")
+    public ResponseEntity<ApiResponse<LeadDisposition[]>> getAllDispositions() {
+        try {
+            LeadDisposition[] dispositions = LeadDisposition.values();
+            return ResponseEntity.ok(ApiResponse.success(dispositions));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get dispositions: " + e.getMessage()));
         }
     }
 }

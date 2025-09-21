@@ -3,6 +3,7 @@ package com.crmplatform.sales.repository;
 import com.crmplatform.sales.entity.Lead;
 import com.crmplatform.sales.entity.LeadStatus;
 import com.crmplatform.sales.entity.LeadSource;
+import com.crmplatform.sales.entity.LeadDisposition;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,4 +55,33 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
     
     // Check if email exists for tenant (for duplicate prevention)
     boolean existsByEmailAndTenantId(String email, Long tenantId);
+    
+    // Additional methods for Reports Service
+    
+    // Get disposition statistics
+    @Query("SELECT l.currentDisposition, COUNT(l) FROM Lead l WHERE l.tenantId = :tenantId AND l.currentDisposition IS NOT NULL GROUP BY l.currentDisposition")
+    List<Object[]> getDispositionStatistics(@Param("tenantId") Long tenantId);
+    
+    // Find leads requiring follow-up
+    @Query("SELECT l FROM Lead l WHERE l.tenantId = :tenantId AND l.nextFollowUpDate <= :currentDate AND l.currentDisposition IN (com.crmplatform.sales.entity.LeadDisposition.CALL_BACK_LATER, com.crmplatform.sales.entity.LeadDisposition.NO_ANSWER, com.crmplatform.sales.entity.LeadDisposition.VOICEMAIL_LEFT, com.crmplatform.sales.entity.LeadDisposition.EMAIL_SENT, com.crmplatform.sales.entity.LeadDisposition.BUSY)")
+    List<Lead> findLeadsRequiringFollowUp(@Param("tenantId") Long tenantId, @Param("currentDate") LocalDateTime currentDate);
+    
+    // Find leads by tenant and source with pagination
+    Page<Lead> findByTenantIdAndLeadSource(Long tenantId, LeadSource leadSource, Pageable pageable);
+    
+    // Find leads contacted in date range
+    @Query("SELECT l FROM Lead l WHERE l.tenantId = :tenantId AND l.lastContactDate >= :startDate AND l.lastContactDate <= :endDate ORDER BY l.lastContactDate DESC")
+    List<Lead> findLeadsContactedInDateRange(@Param("tenantId") Long tenantId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    // Find leads without disposition
+    @Query("SELECT l FROM Lead l WHERE l.tenantId = :tenantId AND l.currentDisposition IS NULL")
+    List<Lead> findLeadsWithoutDisposition(@Param("tenantId") Long tenantId);
+    
+    // Count leads by tenant, source and status
+    @Query("SELECT COUNT(l) FROM Lead l WHERE l.tenantId = :tenantId AND l.leadSource = :source AND l.leadStatus = :status")
+    long countByTenantIdAndLeadSourceAndLeadStatus(@Param("tenantId") Long tenantId, @Param("source") LeadSource source, @Param("status") LeadStatus status);
+    
+    // Find leads by tenant and current disposition
+    @Query("SELECT l FROM Lead l WHERE l.tenantId = :tenantId AND l.currentDisposition = :disposition")
+    List<Lead> findByTenantIdAndCurrentDisposition(@Param("tenantId") Long tenantId, @Param("disposition") LeadDisposition disposition);
 }

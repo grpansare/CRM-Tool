@@ -1,6 +1,7 @@
 package com.crmplatform.sales.service;
 
 import com.crmplatform.common.security.UserContext;
+import com.crmplatform.sales.entity.LeadDisposition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -181,6 +182,26 @@ public class LeadActivityService {
             createActivity(activityData);
         } catch (Exception e) {
             System.err.println("Failed to log lead email activity: " + e.getMessage());
+        }
+    }
+    
+    public void logDispositionUpdate(Long leadId, String leadName, LeadDisposition disposition, String notes) {
+        try {
+            Map<String, Object> activityData = new HashMap<>();
+            activityData.put("type", "DISPOSITION_UPDATE");
+            activityData.put("content", String.format("Lead '%s' disposition set to '%s'%s", 
+                leadName, 
+                disposition.getDisplayName(),
+                notes != null && !notes.trim().isEmpty() ? " - " + notes : ""));
+            activityData.put("outcome", disposition.getDisplayName());
+            
+            Map<String, Object> associations = new HashMap<>();
+            associations.put("leads", List.of(leadId));
+            activityData.put("associations", associations);
+            
+            createActivity(activityData);
+        } catch (Exception e) {
+            System.err.println("Failed to log disposition update activity: " + e.getMessage());
         }
     }
     

@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   Target,
+  FileBarChart,
 } from "lucide-react";
 import Contacts from "../components/Contacts.jsx";
 import Leads from "../components/Leads.jsx";
@@ -29,6 +30,7 @@ import Pipeline from "../components/Pipeline.jsx";
 import Settings1 from "../components/Settings.jsx";
 import Analytics from "../components/Analytics.jsx";
 import EmailTemplates from "../components/EmailTemplates.jsx";
+import Reports from "../components/Reports.jsx";
 import TenantAdminDashboard from "../components/dashboards/TenantAdminDashboard.jsx";
 import SalesManagerDashboard from "../components/dashboards/SalesManagerDashboard.jsx";
 import SalesRepDashboard from "../components/dashboards/SalesRepDashboard.jsx";
@@ -193,6 +195,16 @@ const Dashboard = () => {
                 </Link>
               )}
 
+              {(user.role === "TENANT_ADMIN" || user.role === "SALES_MANAGER" || user.role === "SALES_REP") && (
+                <Link
+                  to="/dashboard/reports"
+                  className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+                >
+                  <BarChart3 className="h-5 w-5 mr-3" />
+                  Reports
+                </Link>
+              )}
+
               <Link
                 to="/dashboard/email-templates"
                 className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
@@ -246,6 +258,7 @@ const Dashboard = () => {
             <Route path="/email-templates" element={<EmailTemplates />} />
             <Route path="/users" element={<UsersManagement />} />
             <Route path="/settings" element={<Settings1 />} />
+            <Route path="/reports" element={<Reports />} />
           </Routes>
         </div>
       </div>

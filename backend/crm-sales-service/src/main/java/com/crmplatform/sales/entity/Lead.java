@@ -63,6 +63,25 @@ public class Lead {
     @Column(name = "owner_user_id", nullable = false)
     private Long ownerUserId;
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "current_disposition", length = 50)
+    private LeadDisposition currentDisposition;
+    
+    @Column(name = "disposition_notes", columnDefinition = "TEXT")
+    private String dispositionNotes;
+    
+    @Column(name = "last_contact_date")
+    private LocalDateTime lastContactDate;
+    
+    @Column(name = "next_follow_up_date")
+    private LocalDateTime nextFollowUpDate;
+    
+    @Column(name = "disposition_updated_at")
+    private LocalDateTime dispositionUpdatedAt;
+    
+    @Column(name = "disposition_updated_by")
+    private Long dispositionUpdatedBy;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -235,6 +254,54 @@ public class Lead {
     
     public void setOwnerUserId(Long ownerUserId) {
         this.ownerUserId = ownerUserId;
+    }
+    
+    public LeadDisposition getCurrentDisposition() {
+        return currentDisposition;
+    }
+    
+    public void setCurrentDisposition(LeadDisposition currentDisposition) {
+        this.currentDisposition = currentDisposition;
+    }
+    
+    public String getDispositionNotes() {
+        return dispositionNotes;
+    }
+    
+    public void setDispositionNotes(String dispositionNotes) {
+        this.dispositionNotes = dispositionNotes;
+    }
+    
+    public LocalDateTime getLastContactDate() {
+        return lastContactDate;
+    }
+    
+    public void setLastContactDate(LocalDateTime lastContactDate) {
+        this.lastContactDate = lastContactDate;
+    }
+    
+    public LocalDateTime getNextFollowUpDate() {
+        return nextFollowUpDate;
+    }
+    
+    public void setNextFollowUpDate(LocalDateTime nextFollowUpDate) {
+        this.nextFollowUpDate = nextFollowUpDate;
+    }
+    
+    public LocalDateTime getDispositionUpdatedAt() {
+        return dispositionUpdatedAt;
+    }
+    
+    public void setDispositionUpdatedAt(LocalDateTime dispositionUpdatedAt) {
+        this.dispositionUpdatedAt = dispositionUpdatedAt;
+    }
+    
+    public Long getDispositionUpdatedBy() {
+        return dispositionUpdatedBy;
+    }
+    
+    public void setDispositionUpdatedBy(Long dispositionUpdatedBy) {
+        this.dispositionUpdatedBy = dispositionUpdatedBy;
     }
     
     public LocalDateTime getCreatedAt() {

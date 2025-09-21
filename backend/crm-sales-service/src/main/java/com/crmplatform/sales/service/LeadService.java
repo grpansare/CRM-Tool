@@ -3,9 +3,12 @@ package com.crmplatform.sales.service;
 import com.crmplatform.sales.dto.CreateLeadRequest;
 import com.crmplatform.sales.dto.LeadResponse;
 import com.crmplatform.sales.dto.UpdateLeadRequest;
+import com.crmplatform.sales.dto.SetDispositionRequest;
+import com.crmplatform.sales.dto.DispositionHistoryResponse;
 import com.crmplatform.sales.entity.Lead;
 import com.crmplatform.sales.entity.LeadStatus;
 import com.crmplatform.sales.entity.LeadSource;
+import com.crmplatform.sales.entity.LeadDisposition;
 import com.crmplatform.sales.repository.LeadRepository;
 import com.crmplatform.common.security.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -218,6 +221,107 @@ public class LeadService {
         Long tenantId = UserContext.getCurrentTenantId();
         LocalDateTime startDate = LocalDateTime.now().minusDays(days);
         List<Lead> leads = leadRepository.findRecentLeads(tenantId, startDate);
+        return leads.stream().map(LeadResponse::new).collect(Collectors.toList());
+    }
+    
+    // Lead Disposition Management
+    public LeadResponse setLeadDisposition(Long leadId, SetDispositionRequest request) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        Long userId = UserContext.getCurrentUserId();
+        
+        Lead lead = leadRepository.findByLeadIdAndTenantId(leadId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Lead not found"));
+        
+        // Store old disposition for activity logging
+        LeadDisposition oldDisposition = lead.getCurrentDisposition();
+        String leadName = (lead.getFirstName() != null ? lead.getFirstName() + " " : "") + lead.getLastName();
+        
+        // Update disposition fields
+        lead.setCurrentDisposition(request.getDisposition());
+        lead.setDispositionNotes(request.getNotes());
+        lead.setNextFollowUpDate(request.getNextFollowUpDate());
+        lead.setDispositionUpdatedAt(LocalDateTime.now());
+        lead.setDispositionUpdatedBy(userId);
+        lead.setLastContactDate(LocalDateTime.now());
+        
+        // Update lead status based on disposition
+        updateLeadStatusBasedOnDisposition(lead, request.getDisposition());
+        
+        Lead updatedLead = leadRepository.save(lead);
+        
+        // Log disposition change activity
+        leadActivityService.logDispositionUpdate(leadId, leadName, request.getDisposition(), request.getNotes());
+        
+        return new LeadResponse(updatedLead);
+    }
+    
+    private void updateLeadStatusBasedOnDisposition(Lead lead, LeadDisposition disposition) {
+        // Auto-update lead status based on disposition
+        switch (disposition) {
+            case CONVERTED:
+                lead.setLeadStatus(LeadStatus.CONVERTED);
+                break;
+            case NOT_INTERESTED:
+            case NOT_QUALIFIED:
+            case DO_NOT_CALL:
+            case LOST:
+                lead.setLeadStatus(LeadStatus.LOST);
+                break;
+            case INTERESTED:
+            case MEETING_SCHEDULED:
+            case DEMO_REQUESTED:
+            case PROPOSAL_SENT:
+                lead.setLeadStatus(LeadStatus.QUALIFIED);
+                break;
+            case CALL_BACK_LATER:
+            case NO_ANSWER:
+            case VOICEMAIL_LEFT:
+            case EMAIL_SENT:
+            case BUSY:
+                lead.setLeadStatus(LeadStatus.CONTACTED);
+                break;
+            default:
+                // Keep current status for other dispositions
+                break;
+        }
+    }
+    
+    // Get current disposition for a lead
+    public DispositionHistoryResponse getCurrentDisposition(Long leadId) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        
+        Lead lead = leadRepository.findByLeadIdAndTenantId(leadId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Lead not found"));
+        
+        if (lead.getCurrentDisposition() == null) {
+            return null;
+        }
+        
+        return new DispositionHistoryResponse(
+            lead.getCurrentDisposition(),
+            lead.getDispositionNotes(),
+            lead.getLastContactDate(),
+            lead.getNextFollowUpDate(),
+            lead.getDispositionUpdatedAt(),
+            lead.getDispositionUpdatedBy(),
+            null // updatedByName - would need user service lookup
+        );
+    }
+    
+    // Get leads requiring follow-up
+    public List<LeadResponse> getLeadsRequiringFollowUp() {
+        Long tenantId = UserContext.getCurrentTenantId();
+        LocalDateTime currentDate = LocalDateTime.now();
+        
+        List<Lead> leads = leadRepository.findLeadsRequiringFollowUp(tenantId, currentDate);
+        return leads.stream().map(LeadResponse::new).collect(Collectors.toList());
+    }
+    
+    // Get leads by disposition
+    public List<LeadResponse> getLeadsByDisposition(LeadDisposition disposition) {
+        Long tenantId = UserContext.getCurrentTenantId();
+        
+        List<Lead> leads = leadRepository.findByTenantIdAndCurrentDisposition(tenantId, disposition);
         return leads.stream().map(LeadResponse::new).collect(Collectors.toList());
     }
 }

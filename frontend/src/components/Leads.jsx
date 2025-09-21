@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Search, Plus, Edit, Edit2, Trash2, Eye, Filter, UserCheck, X, Phone, Mail, FileText, Star, RefreshCw, Building, TrendingUp, Calendar, User } from 'lucide-react';
+import { Search, Plus, Edit, Edit2, Trash2, Eye, Filter, UserCheck, X, Phone, Mail, FileText, Star, RefreshCw, Building, TrendingUp, Calendar, User, PhoneCall, Clock } from 'lucide-react';
 import api from '../services/api';
 import LeadModal from './LeadModal';
 import ConvertLeadModal from './ConvertLeadModal';
+import SetDispositionModal from './modals/SetDispositionModal';
 import ActivityTimeline from './ActivityTimeline';
 
 const Leads = () => {
@@ -16,6 +17,7 @@ const Leads = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDispositionModal, setShowDispositionModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [editingLead, setEditingLead] = useState(null);
 
@@ -131,6 +133,25 @@ const Leads = () => {
     setShowConvertModal(true);
   };
 
+  const openDispositionModal = (lead) => {
+    setSelectedLead(lead);
+    setShowDispositionModal(true);
+  };
+
+  const handleDispositionSet = (updatedLead) => {
+    // Update the lead in the list
+    setLeads(prevLeads => 
+      prevLeads.map(lead => 
+        lead.leadId === updatedLead.leadId ? updatedLead : lead
+      )
+    );
+    
+    // Update selected lead if it's the same one
+    if (selectedLead && selectedLead.leadId === updatedLead.leadId) {
+      setSelectedLead(updatedLead);
+    }
+  };
+
   const getStatusColor = (status) => {
     const statusObj = leadStatuses.find(s => s.value === status);
     return statusObj ? statusObj.color : 'bg-gray-100 text-gray-800';
@@ -148,6 +169,8 @@ const Leads = () => {
     const matchesSource = selectedSource === 'all' || lead.leadSource === selectedSource;
     return matchesStatus && matchesSource;
   });
+
+  const leadsNeedingFollowUp = leads.filter(lead => lead.nextFollowUpDate && new Date(lead.nextFollowUpDate).toLocaleDateString() === new Date().toLocaleDateString());
 
   if (loading) {
     return (
@@ -173,6 +196,62 @@ const Leads = () => {
           Add Lead
         </button>
       </div>
+
+      {/* Follow-up Notification Banner */}
+      {leadsNeedingFollowUp.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <Clock className="h-5 w-5 text-orange-600 mr-2" />
+              <h3 className="text-lg font-medium text-orange-800">
+                {leadsNeedingFollowUp.length} Lead{leadsNeedingFollowUp.length > 1 ? 's' : ''} Need Follow-up Today
+              </h3>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedStatus('all');
+                setSelectedSource('all');
+                setSearchTerm('');
+                fetchLeads();
+              }}
+              className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+            >
+              Refresh
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {leadsNeedingFollowUp.slice(0, 6).map((lead) => (
+              <div 
+                key={lead.leadId} 
+                className="bg-white border border-orange-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => openDetailModal(lead)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {lead.firstName} {lead.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">{lead.company}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-orange-600">
+                      {new Date(lead.nextFollowUpDate).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-orange-600">
+                      {new Date(lead.nextFollowUpDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {leadsNeedingFollowUp.length > 6 && (
+            <p className="text-sm text-orange-600 mt-3 text-center">
+              +{leadsNeedingFollowUp.length - 6} more leads need follow-up
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Filters and Search */}
       <div className="card mb-6">
@@ -287,6 +366,13 @@ const Leads = () => {
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
+                    <button
+                      onClick={() => openDispositionModal(lead)}
+                      className="text-gray-400 hover:text-orange-600 p-1"
+                      title="Set Call Disposition"
+                    >
+                      <PhoneCall className="h-4 w-4" />
+                    </button>
                     {lead.leadStatus === 'QUALIFIED' ? (
                       <button
                         onClick={() => openConvertModal(lead)}
@@ -346,52 +432,19 @@ const Leads = () => {
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>Created: {new Date(lead.createdAt).toLocaleDateString()}</span>
                   </div>
+                  
+                  {lead.nextFollowUpDate && (
+                    <div className="flex items-center text-sm text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                      <Clock className="h-4 w-4 mr-2" />
+                      <span>Follow-up: {new Date(lead.nextFollowUpDate).toLocaleDateString()} at {new Date(lead.nextFollowUpDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Modals */}
-      <LeadModal
-        show={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={() => {
-          setShowCreateModal(false);
-          fetchLeads();
-        }}
-        title="Create New Lead"
-      />
-
-      <LeadModal
-        show={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingLead(null);
-        }}
-        onSuccess={() => {
-          setShowEditModal(false);
-          setEditingLead(null);
-          fetchLeads();
-        }}
-        lead={editingLead}
-        title="Edit Lead"
-      />
-
-      <ConvertLeadModal
-        show={showConvertModal}
-        onClose={() => {
-          setShowConvertModal(false);
-          setSelectedLead(null);
-        }}
-        onSuccess={() => {
-          setShowConvertModal(false);
-          setSelectedLead(null);
-          fetchLeads();
-        }}
-        lead={selectedLead}
-      />
 
       {/* Lead Detail Modal with Activity Timeline */}
       {showDetailModal && selectedLead && (
@@ -479,6 +532,15 @@ const Leads = () => {
                           {new Date(selectedLead.createdAt).toLocaleDateString()}
                         </p>
                       </div>
+                      
+                      {selectedLead.nextFollowUpDate && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Next Follow-up</label>
+                          <p className="mt-1 text-sm text-orange-600">
+                            {new Date(selectedLead.nextFollowUpDate).toLocaleDateString()} at {new Date(selectedLead.nextFollowUpDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -527,7 +589,7 @@ const Leads = () => {
                         onClick={() => logQuickActivity('CALL', `Called ${selectedLead.firstName || ''} ${selectedLead.lastName}`.trim())}
                         className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md flex items-center"
                       >
-                        <Phone className="h-4 w-4 mr-2 text-blue-600" />
+                        <PhoneCall className="h-4 w-4 mr-2 text-blue-600" />
                         Log Call
                       </button>
                       <button
@@ -557,6 +619,56 @@ const Leads = () => {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <LeadModal
+        show={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          fetchLeads();
+        }}
+        title="Create New Lead"
+      />
+
+      <LeadModal
+        show={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingLead(null);
+        }}
+        onSuccess={() => {
+          setShowEditModal(false);
+          setEditingLead(null);
+          fetchLeads();
+        }}
+        lead={editingLead}
+        title="Edit Lead"
+      />
+
+      <ConvertLeadModal
+        show={showConvertModal}
+        onClose={() => {
+          setShowConvertModal(false);
+          setSelectedLead(null);
+        }}
+        onSuccess={() => {
+          setShowConvertModal(false);
+          setSelectedLead(null);
+          fetchLeads();
+        }}
+        lead={selectedLead}
+      />
+
+      <SetDispositionModal
+        isOpen={showDispositionModal}
+        onClose={() => {
+          setShowDispositionModal(false);
+          setSelectedLead(null);
+        }}
+        lead={selectedLead}
+        onDispositionSet={handleDispositionSet}
+      />
     </div>
   );
 };

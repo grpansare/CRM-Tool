@@ -28,6 +28,7 @@ public class LeadResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private BigDecimal estimatedValue;
+    private LocalDateTime nextFollowUpDate;
     
     // Constructors
     public LeadResponse() {}
@@ -48,16 +49,18 @@ public class LeadResponse {
         this.annualRevenue = lead.getAnnualRevenue();
         this.industry = lead.getIndustry();
         this.ownerUserId = lead.getOwnerUserId();
-        this.ownerName = lead.getOwnerName();
+        this.ownerName = null; // Owner name needs to be set separately via user service lookup
         this.createdAt = lead.getCreatedAt();
         this.updatedAt = lead.getUpdatedAt();
         this.estimatedValue = lead.getEstimatedValue();
+        this.nextFollowUpDate = lead.getNextFollowUpDate(); // Assuming Lead entity has getNextFollowUpDate method
     }
     
     // Getters and Setters
     public Long getLeadId() {
         return leadId;
     }
+    
     
     public void setLeadId(Long leadId) {
         this.leadId = leadId;
@@ -205,5 +208,13 @@ public class LeadResponse {
     
     public void setEstimatedValue(BigDecimal estimatedValue) {
         this.estimatedValue = estimatedValue;
+    }
+    
+    public LocalDateTime getNextFollowUpDate() {
+        return nextFollowUpDate;
+    }
+    
+    public void setNextFollowUpDate(LocalDateTime nextFollowUpDate) {
+        this.nextFollowUpDate = nextFollowUpDate;
     }
 }
