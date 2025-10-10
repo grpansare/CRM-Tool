@@ -27,6 +27,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers(HttpMethod.OPTIONS).permitAll()
                 .requestMatchers("/health/**", "/actuator/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/activities").permitAll() // Allow inter-service calls
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

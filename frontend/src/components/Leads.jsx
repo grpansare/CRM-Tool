@@ -432,6 +432,13 @@ const Leads = () => {
                     <Calendar className="h-4 w-4 mr-2" />
                     <span>Created: {new Date(lead.createdAt).toLocaleDateString()}</span>
                   </div>
+                  {/* Lead Owner Information */}
+{lead.ownerUserId && (
+  <div className="flex items-center text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+    <User className="h-4 w-4 mr-2" />
+    <span>Owner: {lead.ownerName || `User ${lead.ownerUserId}`}</span>
+  </div>
+)}
                   
                   {lead.nextFollowUpDate && (
                     <div className="flex items-center text-sm text-orange-600 bg-orange-50 px-2 py-1 rounded">
@@ -499,6 +506,14 @@ const Leads = () => {
                           <p className="mt-1 text-sm text-gray-900">{selectedLead.company}</p>
                         </div>
                       )}
+                      {selectedLead.ownerUserId && (
+  <div>
+    <label className="text-sm font-medium text-gray-500">Assigned To</label>
+    <p className="mt-1 text-sm text-gray-900">
+      {selectedLead.ownerName || `User ${selectedLead.ownerUserId}`}
+    </p>
+  </div>
+)}
                       
                       {selectedLead.jobTitle && (
                         <div>

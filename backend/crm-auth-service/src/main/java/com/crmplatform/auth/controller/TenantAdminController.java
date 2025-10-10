@@ -29,17 +29,12 @@ public class TenantAdminController {
      * Get organization-wide dashboard statistics
      */
     @GetMapping("/dashboard/stats")
+    @PreAuthorize("hasAuthority('ROLE_TENANT_ADMIN')")
+
     public ResponseEntity<ApiResponse<TenantStatsResponse>> getDashboardStats() {
         log.info("Getting dashboard statistics for tenant admin");
         
-        // Manual role checking using UserContext
-        String currentRole = com.crmplatform.common.security.UserContext.getCurrentUserRole();
-        log.info("=== MANUAL ROLE CHECK === Current role from UserContext: {}", currentRole);
-        
-        if (!"TENANT_ADMIN".equals(currentRole)) {
-            log.warn("Access denied - user role '{}' is not TENANT_ADMIN", currentRole);
-            return ResponseEntity.status(403).body(ApiResponse.error("Access denied", "INSUFFICIENT_PRIVILEGES"));
-        }
+     
         
         ApiResponse<TenantStatsResponse> response = tenantAdminService.getDashboardStats();
         return ResponseEntity.ok(response);
@@ -49,18 +44,12 @@ public class TenantAdminController {
      * Get recent activity for the organization
      */
     @GetMapping("/dashboard/recent-activity")
+    @PreAuthorize("hasAuthority('ROLE_TENANT_ADMIN')")
+
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRecentActivity(
-            @RequestParam(defaultValue = "10") int limit) {
+    		@RequestParam(name = "limit", defaultValue = "10") int limit) {
         log.info("Getting recent activity for tenant admin, limit: {}", limit);
         
-        // Manual role checking using UserContext
-        String currentRole = com.crmplatform.common.security.UserContext.getCurrentUserRole();
-        log.info("=== MANUAL ROLE CHECK === Current role from UserContext: {}", currentRole);
-        
-        if (!"TENANT_ADMIN".equals(currentRole)) {
-            log.warn("Access denied - user role '{}' is not TENANT_ADMIN", currentRole);
-            return ResponseEntity.status(403).body(ApiResponse.error("Access denied", "INSUFFICIENT_PRIVILEGES"));
-        }
         
         ApiResponse<List<Map<String, Object>>> response = tenantAdminService.getRecentActivity(limit);
         return ResponseEntity.ok(response);
@@ -70,10 +59,12 @@ public class TenantAdminController {
      * Get all users in the organization
      */
     @GetMapping("/users")
+    @PreAuthorize("hasAuthority('ROLE_TENANT_ADMIN')")
+
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String search) {
+    		@RequestParam(name = "page", defaultValue = "0") int page,
+    		@RequestParam(name = "size", defaultValue = "20") int size,
+    		@RequestParam(name = "search", required = false) String search) {
         log.info("Getting all users for tenant admin - page: {}, size: {}, search: {}", page, size, search);
         
         ApiResponse<List<User>> response = tenantAdminService.getAllUsers(page, size, search);
@@ -120,7 +111,7 @@ public class TenantAdminController {
     @PutMapping("/users/{userId}/status")
     public ResponseEntity<ApiResponse<User>> updateUserStatus(
             @PathVariable Long userId,
-            @RequestParam boolean active) {
+            @RequestParam(name = "active") boolean active) {
         log.info("Updating user status: {} to active: {}", userId, active);
         
         ApiResponse<User> response = tenantAdminService.updateUserStatus(userId, active);
@@ -224,7 +215,7 @@ public class TenantAdminController {
      */
     @PutMapping("/subscription")
     public ResponseEntity<ApiResponse<String>> updateSubscription(
-            @RequestParam String plan) {
+    		@RequestParam(name = "plan") String plan) {
         log.info("Updating subscription plan to: {}", plan);
         
         ApiResponse<String> response = tenantAdminService.updateSubscriptionPlan(plan);

@@ -28,15 +28,29 @@ public class CreateLeadRequest {
     private String jobTitle;
     
     private LeadSource leadSource;
+      
     
+    @Size(max = 100, message = "Industry must not exceed 100 characters")
+    private String industry;
+    
+    @Size(max = 255, message = "Website must not exceed 255 characters")
+    private String website;
     private String notes;
     
     private Integer employeeCount;
     
     private Long annualRevenue;
     
-    @Size(max = 100, message = "Industry must not exceed 100 characters")
-    private String industry;
+  
+   
+    
+    public String getWebsite() {
+        return website;
+    }
+    
+    public void setWebsite(String website) {
+        this.website = website;
+    }
     
     // Constructors
     public CreateLeadRequest() {}

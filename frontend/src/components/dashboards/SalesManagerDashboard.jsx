@@ -8,10 +8,15 @@ import {
   Activity,
   Calendar,
   DollarSign,
+  Plus,
+  X,
+  UserPlus, FileText, Search, FileBarChart, Phone, Mail, CheckSquare, PieChart, Briefcase, Upload,
 } from "lucide-react";
 import api from "../../services/api";
+import { useNavigate } from "react-router-dom";
 
 const SalesManagerDashboard = () => {
+  const navigate = useNavigate();
   const [teamStats, setTeamStats] = useState({
     teamSize: 0,
     totalDeals: 0,
@@ -23,6 +28,110 @@ const SalesManagerDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showQuickActionModal, setShowQuickActionModal] = useState(false);
+  const [quickActions, setQuickActions] = useState([
+    {
+      id: 1,
+      title: "Create New Lead",
+      description: "Add a new lead to the pipeline",
+      icon: UserPlus,
+      color: "blue",
+      action: () => navigate("/dashboard/leads"),
+    },
+    {
+      id: 2,
+      title: "Create New Deal",
+      description: "Start a new deal opportunity",
+      icon: Briefcase,
+      color: "green",
+      action: () => navigate("/dashboard/deals"),
+    },
+    {
+      id: 3,
+      title: "Add Contact",
+      description: "Add a new contact to the system",
+      icon: Users,
+      color: "purple",
+      action: () => navigate("/dashboard/contacts"),
+    },
+    {
+      id: 4,
+      title: "Create Task",
+      description: "Create a new task or reminder",
+      icon: CheckSquare,
+      color: "orange",
+      action: () => navigate("/dashboard/tasks"),
+    },
+    {
+      id: 5,
+      title: "Upload Document",
+      description: "Upload and manage documents",
+      icon: Upload,
+      color: "indigo",
+      action: () => navigate("/dashboard/documents"),
+    },
+    {
+      id: 6,
+      title: "View Reports",
+      description: "Access analytics and reports",
+      icon: PieChart,
+      color: "red",
+      action: () => navigate("/dashboard/reports"),
+    },
+    {
+      id: 7,
+      title: "Advanced Search",
+      description: "Search across all CRM data",
+      icon: Search,
+      color: "gray",
+      action: () => navigate("/dashboard/advanced-search"),
+    },
+    {
+      id: 8,
+      title: "Import Contacts",
+      description: "Import/export contact data",
+      icon: FileBarChart,
+      color: "teal",
+      action: () => navigate("/dashboard/contact-import-export"),
+    },
+    {
+      id: 9,
+      title: "Team Performance",
+      description: "View team performance metrics",
+      icon: Award,
+      color: "yellow",
+      action: () => {
+        const element = document.getElementById("team-performance-section");
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      },
+    },
+    {
+      id: 10,
+      title: "Schedule Meeting",
+      description: "Schedule a meeting or appointment",
+      icon: Calendar,
+      color: "blue",
+      action: () => window.open("https://calendar.google.com", "_blank"),
+    },
+    {
+      id: 11,
+      title: "Send Email",
+      description: "Compose and send an email",
+      icon: Mail,
+      color: "green",
+      action: () => window.open("mailto:", "_blank"),
+    },
+    {
+      id: 12,
+      title: "Make Call",
+      description: "Initiate a phone call",
+      icon: Phone,
+      color: "purple",
+      action: () => alert("Phone dialer integration - Connect your phone system"),
+    },
+  ]);
 
   useEffect(() => {
     fetchTeamStats();
@@ -62,6 +171,39 @@ const SalesManagerDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleQuickAction = (action) => {
+    if (action.action) {
+      action.action();
+    } else {
+      console.log(`Quick action ${action.title} clicked`);
+    }
+  };
+
+  const getActionColor = (color) => {
+    switch (color) {
+      case "blue":
+        return "bg-blue-100 text-blue-600";
+      case "green":
+        return "bg-green-100 text-green-600";
+      case "purple":
+        return "bg-purple-100 text-purple-600";
+      case "orange":
+        return "bg-orange-100 text-orange-600";
+      case "indigo":
+        return "bg-indigo-100 text-indigo-600";
+      case "red":
+        return "bg-red-100 text-red-600";
+      case "gray":
+        return "bg-gray-100 text-gray-600";
+      case "teal":
+        return "bg-teal-100 text-teal-600";
+      case "yellow":
+        return "bg-yellow-100 text-yellow-600";
+      default:
+        return "bg-gray-100 text-gray-600";
     }
   };
 
@@ -166,7 +308,7 @@ const SalesManagerDashboard = () => {
       </div>
 
       {/* Team Performance Table */}
-      <div className="card mb-6 sm:mb-8">
+      <div className="card mb-6 sm:mb-8" id="team-performance-section">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Team Performance
         </h2>
@@ -240,18 +382,39 @@ const SalesManagerDashboard = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Quick Actions
           </h2>
-          <div className="space-y-3">
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Users className="h-5 w-5 text-blue-600 mr-3" />
-              <span>Assign Leads</span>
-            </button>
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Calendar className="h-5 w-5 text-green-600 mr-3" />
-              <span>Schedule Team Meeting</span>
-            </button>
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Award className="h-5 w-5 text-yellow-600 mr-3" />
-              <span>Review Performance</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {quickActions.slice(0, 8).map((action) => {
+              const IconComponent = action.icon;
+              return (
+                <button
+                  key={action.id}
+                  className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors text-left"
+                  onClick={() => handleQuickAction(action)}
+                >
+                  <div className={`p-2 rounded-lg mr-3 ${getActionColor(action.color)}`}>
+                    <IconComponent className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {action.title}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {action.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          
+          {/* Show More Actions Button */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowQuickActionModal(true)}
+              className="w-full flex items-center justify-center p-2 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              View All Actions ({quickActions.length})
             </button>
           </div>
         </div>
@@ -282,6 +445,51 @@ const SalesManagerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Quick Actions Modal */}
+      {showQuickActionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">All Quick Actions</h2>
+              <button
+                onClick={() => setShowQuickActionModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {quickActions.map((action) => {
+                  const IconComponent = action.icon;
+                  return (
+                    <button
+                      key={action.id}
+                      className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                      onClick={() => {
+                        handleQuickAction(action);
+                        setShowQuickActionModal(false);
+                      }}
+                    >
+                      <div className={`p-3 rounded-lg mb-3 ${getActionColor(action.color)}`}>
+                        <IconComponent className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-sm font-medium text-gray-900 mb-1 text-center">
+                        {action.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 text-center">
+                        {action.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

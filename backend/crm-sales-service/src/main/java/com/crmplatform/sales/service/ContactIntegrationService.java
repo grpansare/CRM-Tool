@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.http.HttpStatus;
 import java.util.Map;
 
 @Service
@@ -80,6 +81,13 @@ public class ContactIntegrationService {
             log.warn("Failed to get contact details for contact ID: {} in tenant: {}", contactId, tenantId);
             return null;
             
+              } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 404) {
+                log.warn("Contact not found for contact ID: {} in tenant: {}", contactId, tenantId);
+                return null;
+            }
+            log.error("HTTP error getting contact details for contact ID: {} in tenant: {}", contactId, tenantId, e);
+            return null;
         } catch (Exception e) {
             log.error("Error getting contact details for contact ID: {} in tenant: {}", contactId, tenantId, e);
             return null;
@@ -103,9 +111,16 @@ public class ContactIntegrationService {
             log.warn("Failed to get account details for account ID: {} in tenant: {}", accountId, tenantId);
             return null;
             
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 404) {
+                log.warn("Account not found for account ID: {} in tenant: {}", accountId, tenantId);
+                return null;
+            }
+            log.error("HTTP error getting account details for account ID: {} in tenant: {}", accountId, tenantId, e);
+            return null;
         } catch (Exception e) {
             log.error("Error getting account details for account ID: {} in tenant: {}", accountId, tenantId, e);
             return null;
         }
     }
-} 
+}

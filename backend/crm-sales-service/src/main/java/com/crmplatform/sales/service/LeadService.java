@@ -36,6 +36,12 @@ public class LeadService {
     @Autowired
     private LeadScoringService leadScoringService;
     
+    @Autowired
+    private LeadAssignmentService leadAssignmentService;
+    
+    @Autowired
+    private UserService userService;
+    
     public Page<LeadResponse> getAllLeads(int page, int size, String searchTerm) {
         Long tenantId = UserContext.getCurrentTenantId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -47,7 +53,14 @@ public class LeadService {
             leads = leadRepository.findByTenantId(tenantId, pageable);
         }
         
-        return leads.map(LeadResponse::new);
+        Page<LeadResponse> result = leads.map(lead -> {
+            LeadResponse response = new LeadResponse(lead);
+            // Set owner name using UserService
+            response.setOwnerName(userService.getUserName(lead.getOwnerUserId()));
+            return response;
+        });
+        
+        return result;
     }
     
     public LeadResponse getLeadById(Long leadId) {
@@ -81,21 +94,35 @@ public class LeadService {
         lead.setEmployeeCount(request.getEmployeeCount());
         lead.setAnnualRevenue(request.getAnnualRevenue());
         lead.setIndustry(request.getIndustry());
+        
         lead.setOwnerUserId(userId);
         lead.setLeadStatus(LeadStatus.NEW);
-        
+                lead.setWebsite(request.getWebsite());
+
         // Calculate initial lead score
         int calculatedScore = leadScoringService.calculateLeadScore(lead);
         lead.setLeadScore(calculatedScore);
         
         Lead savedLead = leadRepository.save(lead);
-        
-        // Log lead creation activity
-        String leadName = (savedLead.getFirstName() != null ? savedLead.getFirstName() + " " : "") + savedLead.getLastName();
-        String source = savedLead.getLeadSource() != null ? savedLead.getLeadSource().toString() : "UNKNOWN";
-        leadActivityService.logLeadCreated(savedLead.getLeadId(), leadName, source);
-        
-        return new LeadResponse(savedLead);
+
+     // Automatic lead assignment based on rules
+     try {
+         Long assignedUserId = leadAssignmentService.assignLead(savedLead);
+         if (assignedUserId != null && !assignedUserId.equals(savedLead.getOwnerUserId())) {
+             savedLead.setOwnerUserId(assignedUserId);
+             savedLead = leadRepository.save(savedLead);
+         }
+     } catch (Exception e) {
+         // Log assignment failure but don't fail lead creation
+         System.err.println("Lead assignment failed for leadId: " + savedLead.getLeadId() + ", error: " + e.getMessage());
+     }
+
+     // Log lead creation activity
+     String leadName = (savedLead.getFirstName() != null ? savedLead.getFirstName() + " " : "") + savedLead.getLastName();
+     String source = savedLead.getLeadSource() != null ? savedLead.getLeadSource().toString() : "UNKNOWN";
+     leadActivityService.logLeadCreated(savedLead.getLeadId(), leadName, source);
+
+     return new LeadResponse(savedLead);
     }
     
     public LeadResponse updateLead(Long leadId, UpdateLeadRequest request) {
@@ -128,6 +155,8 @@ public class LeadService {
         if (request.getEmployeeCount() != null) lead.setEmployeeCount(request.getEmployeeCount());
         if (request.getAnnualRevenue() != null) lead.setAnnualRevenue(request.getAnnualRevenue());
         if (request.getIndustry() != null) lead.setIndustry(request.getIndustry());
+                if (request.getWebsite() != null) lead.setWebsite(request.getWebsite());
+
         if (request.getLeadScore() != null) {
             lead.setLeadScore(request.getLeadScore()); // Manual override
         } else {

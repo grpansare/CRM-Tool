@@ -23,12 +23,14 @@ public class LeadResponse {
     private Integer employeeCount;
     private Long annualRevenue;
     private String industry;
+    private String website;
     private Long ownerUserId;
     private String ownerName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private BigDecimal estimatedValue;
     private LocalDateTime nextFollowUpDate;
+
     
     // Constructors
     public LeadResponse() {}
@@ -48,7 +50,9 @@ public class LeadResponse {
         this.employeeCount = lead.getEmployeeCount();
         this.annualRevenue = lead.getAnnualRevenue();
         this.industry = lead.getIndustry();
+        this.website = lead.getWebsite();
         this.ownerUserId = lead.getOwnerUserId();
+
         this.ownerName = null; // Owner name needs to be set separately via user service lookup
         this.createdAt = lead.getCreatedAt();
         this.updatedAt = lead.getUpdatedAt();
@@ -76,6 +80,15 @@ public class LeadResponse {
     
     public String getLastName() {
         return lastName;
+    }
+
+   
+    public String getWebsite() {
+        return website;
+    }
+    
+    public void setWebsite(String website) {
+        this.website = website;
     }
     
     public void setLastName(String lastName) {

@@ -67,6 +67,10 @@ public class Lead {
     @Column(name = "current_disposition", length = 50)
     private LeadDisposition currentDisposition;
     
+
+     @Column(name = "website", length = 255)
+    private String website;
+
     @Column(name = "disposition_notes", columnDefinition = "TEXT")
     private String dispositionNotes;
     
@@ -131,7 +135,15 @@ public class Lead {
     public Long getTenantId() {
         return tenantId;
     }
+   
+    public String getWebsite() {
+        return website;
+    }
     
+    public void setWebsite(String website) {
+        this.website = website;
+    }
+
     public void setTenantId(Long tenantId) {
         this.tenantId = tenantId;
     }

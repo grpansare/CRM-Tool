@@ -20,11 +20,16 @@ import {
   X,
   Target,
   FileBarChart,
+  CheckSquare,
+  FileText,
 } from "lucide-react";
 import Contacts from "../components/Contacts.jsx";
 import Leads from "../components/Leads.jsx";
 import Deals from "../components/Deals.jsx";
 import Accounts from "../components/Accounts.jsx";
+import Tasks from "../components/Tasks.jsx";
+import Documents from "../components/Documents.jsx";
+import AdvancedSearch from "../components/AdvancedSearch.jsx";
 import UsersManagement from "../components/UsersManagement.jsx";
 import Pipeline from "../components/Pipeline.jsx";
 import Settings1 from "../components/Settings.jsx";
@@ -184,6 +189,13 @@ const Dashboard = () => {
                 <Building className="h-5 w-5 mr-3" />
                 Accounts
               </Link>
+              <Link
+  to="/dashboard/tasks"
+  className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+>
+  <Calendar className="h-5 w-5 mr-3" />
+  Tasks
+</Link>
 
               {(user.role === "TENANT_ADMIN" || user.role === "SALES_MANAGER" || user.role === "SALES_REP") && (
                 <Link
@@ -225,6 +237,22 @@ const Dashboard = () => {
               )}
 
               <Link
+                to="/dashboard/documents"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+              >
+                <FileText className="h-5 w-5 mr-3" />
+                Documents
+              </Link>
+
+              <Link
+                to="/dashboard/advanced-search"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
+              >
+                <Search className="h-5 w-5 mr-3" />
+                Advanced Search
+              </Link>
+
+              <Link
                 to="/dashboard/settings"
                 className="flex items-center px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg"
               >
@@ -253,12 +281,15 @@ const Dashboard = () => {
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/deals" element={<Deals />} />
             <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/tasks" element={<Tasks />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/email-templates" element={<EmailTemplates />} />
             <Route path="/users" element={<UsersManagement />} />
             <Route path="/settings" element={<Settings1 />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/advanced-search" element={<AdvancedSearch />} />
           </Routes>
         </div>
       </div>

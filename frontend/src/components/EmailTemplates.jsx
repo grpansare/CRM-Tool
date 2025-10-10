@@ -41,7 +41,7 @@ const EmailTemplates = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/email/templates', {
+      const response = await fetch('/api/v1/email/templates', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -68,8 +68,8 @@ const EmailTemplates = () => {
     try {
       const token = localStorage.getItem('token');
       const url = editingTemplate 
-        ? `/api/email/templates/${editingTemplate.id}`
-        : '/api/email/templates';
+        ? `/api/v1/email/templates/${editingTemplate.id}`
+        : '/api/v1/email/templates';
       
       const method = editingTemplate ? 'PUT' : 'POST';
       
@@ -115,7 +115,7 @@ const EmailTemplates = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/email/templates/${templateId}`, {
+      const response = await fetch(`/api/v1/email/templates/${templateId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

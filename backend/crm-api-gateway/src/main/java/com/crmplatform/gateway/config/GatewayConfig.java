@@ -59,7 +59,7 @@ public class GatewayConfig {
                 
                 // Sales Service Routes
                 .route("sales-service", r -> r
-                        .path("/api/v1/deals/**", "/api/v1/pipelines/**", "/api/v1/sales-manager/**", "/api/v1/analytics/**", "/api/v1/leads/**", "/api/v1/reports/**")
+                        .path("/api/v1/deals/**", "/api/v1/pipelines/**", "/api/v1/sales-manager/**", "/api/v1/analytics/**", "/api/v1/leads/**", "/api/v1/reports/**", "/api/v1/tasks/**", "/api/v1/documents/**", "/api/v1/lead-assignment/**", "/api/v1/emails/**")
                         .filters(f -> f
                                 .rewritePath("/api/v1/(?<segment>.*)", "/api/v1/${segment}")
                                 .circuitBreaker(config -> config
@@ -83,7 +83,7 @@ public class GatewayConfig {
                 .route("email-service", r -> r
                         .path("/api/v1/email/**")
                         .filters(f -> f
-                                .rewritePath("/api/v1/email/(?<segment>.*)", "/api/v1/email/${segment}")
+                                .rewritePath("/api/v1/email/(?<segment>.*)", "/api/email/${segment}")
                                 .circuitBreaker(config -> config
                                         .setName("email-service-circuit-breaker")
                                         .setFallbackUri("forward:/fallback/email"))

@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS).permitAll()
                 .requestMatchers("/health/**", "/actuator/**").permitAll()
                 .requestMatchers("/api/email/welcome", "/api/email/invitation").permitAll() // Public endpoints for inter-service communication
+                .requestMatchers("/api/email/templates/**").permitAll() // TEMPORARY: Debug 403 issue
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

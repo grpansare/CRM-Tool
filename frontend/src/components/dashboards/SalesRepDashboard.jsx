@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Add this import
 import {
   Target,
   BarChart3,
@@ -13,6 +14,7 @@ import api from "../../services/api";
 import { toast } from "react-hot-toast";
 
 const SalesRepDashboard = () => {
+  const navigate = useNavigate();
   const [personalStats, setPersonalStats] = useState({
     activeDeals: 0,
     totalRevenue: 0,
@@ -24,6 +26,29 @@ const SalesRepDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const handleQuickAction = (action) => {
+    switch (action) {
+      case 'create-deal':
+        navigate('/dashboard/deals');
+        toast.success('Navigating to deals page');
+        break;
+      case 'add-contact':
+        navigate('/dashboard/contacts');
+        toast.success('Navigating to contacts page');
+        break;
+      case 'schedule-followup':
+        // Open calendar or scheduling modal
+        window.open('https://calendar.google.com', '_blank');
+        toast.success('Opening calendar');
+        break;
+      case 'update-deal':
+        navigate('/dashboard/deals');
+        toast.success('Navigating to deals page');
+        break;
+      default:
+        toast.error('Action not implemented yet');
+    }
+  };
 
   // Fetch dashboard data from backend APIs
   const fetchDashboardData = async () => {
@@ -57,11 +82,14 @@ const SalesRepDashboard = () => {
       }
 
       // Process activities response
-      if (activitiesResponse.status === 'fulfilled' && activitiesResponse.value.data.success) {
-        activities = activitiesResponse.value.data.data || [];
-      } else {
-        console.warn('Failed to fetch activities:', activitiesResponse.reason?.response?.data?.message);
-      }
+if (activitiesResponse.status === 'fulfilled' && activitiesResponse.value.data.success) {
+  const activitiesData = activitiesResponse.value.data.data;
+  // Handle paginated response - extract content array from Page object
+  activities = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.content || []);
+} else {
+  console.warn('Failed to fetch activities:', activitiesResponse.reason?.response?.data?.message || 'Activity service unavailable');
+  activities = []; // Ensure activities is always an array
+}
 
       // Calculate stats from deals
       const activeDeals = deals.filter(deal => deal.stage?.name !== 'Closed Won' && deal.stage?.name !== 'Closed Lost').length;
@@ -88,12 +116,14 @@ const SalesRepDashboard = () => {
         value: data.value
       }));
 
-      // Format recent activities
-      const recentActivities = activities.slice(0, 4).map(activity => ({
-        type: activity.type || 'activity',
-        message: activity.content || 'Activity recorded',
-        time: formatTimeAgo(activity.timestamp)
-      }));
+     // Format recent activities - ensure activities is an array
+const recentActivities = Array.isArray(activities) 
+? activities.slice(0, 4).map(activity => ({
+    type: activity.type || 'activity',
+    message: activity.content || 'Activity recorded',
+    time: formatTimeAgo(activity.timestamp)
+  }))
+: [];
 
       // Use analytics data if available, otherwise use calculated values
       const stats = {
@@ -261,23 +291,38 @@ const SalesRepDashboard = () => {
             Quick Actions
           </h2>
           <div className="space-y-3">
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Target className="h-5 w-5 text-blue-600 mr-3" />
-              <span>Create New Deal</span>
-            </button>
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Activity className="h-5 w-5 text-green-600 mr-3" />
-              <span>Add New Contact</span>
-            </button>
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Calendar className="h-5 w-5 text-purple-600 mr-3" />
-              <span>Schedule Follow-up</span>
-            </button>
-            <button className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <CheckCircle className="h-5 w-5 text-yellow-600 mr-3" />
-              <span>Update Deal Stage</span>
-            </button>
-          </div>
+  <button 
+    onClick={() => handleQuickAction('create-deal')}
+    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+  >
+    <Target className="h-5 w-5 text-blue-600 mr-3" />
+    <span>Create New Deal</span>
+  </button>
+  
+  <button 
+    onClick={() => handleQuickAction('add-contact')}
+    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-green-300 transition-colors"
+  >
+    <Activity className="h-5 w-5 text-green-600 mr-3" />
+    <span>Add New Contact</span>
+  </button>
+  
+  <button 
+    onClick={() => handleQuickAction('schedule-followup')}
+    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-purple-300 transition-colors"
+  >
+    <Calendar className="h-5 w-5 text-purple-600 mr-3" />
+    <span>Schedule Follow-up</span>
+  </button>
+  
+  <button 
+    onClick={() => handleQuickAction('update-deal')}
+    className="flex items-center w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-yellow-300 transition-colors"
+  >
+    <CheckCircle className="h-5 w-5 text-yellow-600 mr-3" />
+    <span>Update Deal Stage</span>
+  </button>
+</div>
         </div>
 
         <div className="card">
